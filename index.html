@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMIT Marine — Field Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Archivo+Narrow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#1a1a1a;--s1:#212121;--s2:#282828;--s3:#303030;--b1:#383838;--b2:#444;
+  --txt:#f2f2f2;--txt2:#999;--txt3:#585858;
+  --orange:#e8600a;--oh:#ff7522;--odim:rgba(232,96,10,.14);--oglow:rgba(232,96,10,.07);
+  --green:#22c97a;--blue:#3b9eff;--purple:#c084fc;--yellow:#f0c500;
+  --EP:#3b9eff;--WP:#22c97a;--BH:#c084fc;--B2B:#e8600a;--CUSTOM:#94a3b8;--UAE:#f59e0b;--LB:#16a34a;
+  --r:3px;
+  --font:'Archivo',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--txt);font-family:var(--font);font-size:13px;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+
+/* ─── HEADER ─── */
+header{
+  background:var(--s1);border-bottom:1px solid var(--b1);
+  height:50px;padding:0 16px;display:flex;align-items:center;gap:12px;
+  flex-shrink:0;z-index:900;
+}
+.logo{height:26px;object-fit:contain;}
+.hd-sep{width:1px;height:22px;background:var(--b1);}
+.hd-title{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);}
+
+/* NAV TABS in header */
+.hd-tabs{display:flex;gap:2px;margin-left:16px;}
+.htab{
+  height:32px;padding:0 14px;border-radius:var(--r);border:1px solid transparent;
+  font-family:var(--font);font-size:11px;font-weight:600;letter-spacing:.04em;
+  cursor:pointer;transition:all .15s;color:var(--txt3);background:transparent;
+}
+.htab:hover{color:var(--txt2);}
+.htab.on{background:var(--s3);border-color:var(--b2);color:var(--txt);}
+.htab.scope-tab.on{color:var(--orange);border-color:rgba(232,96,10,.35);background:var(--odim);}
+
+/* DB status */
+.db-status{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--txt3);}
+.db-dot{width:5px;height:5px;border-radius:50%;background:var(--txt3);transition:background .3s;}
+.db-dot.ok{background:var(--green);}
+.db-dot.saving{background:var(--orange);animation:blink .6s infinite;}
+.db-dot.err{background:#f87171;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.hd-stats{display:flex;gap:16px;margin-left:auto;}
+.hst{text-align:center;}
+.hst-n{font-size:17px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}
+.hst-l{font-size:8px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-top:2px;}
+.hd-btns{display:flex;gap:5px;margin-left:10px;}
+.hbtn{
+  height:30px;padding:0 11px;background:var(--s3);border:1px solid var(--b2);
+  border-radius:var(--r);color:var(--txt2);font-family:var(--font);font-size:11px;
+  font-weight:600;cursor:pointer;transition:all .14s;display:flex;align-items:center;gap:5px;white-space:nowrap;
+}
+.hbtn:hover{color:var(--txt);background:var(--b1);}
+.hbtn.orange{background:var(--orange);border-color:var(--orange);color:#fff;}
+.hbtn.orange:hover{background:var(--oh);}
+.hbtn.add-on{background:var(--odim);border-color:var(--orange);color:var(--orange);animation:pulse-btn 1.4s ease-in-out infinite;}
+@keyframes pulse-btn{0%,100%{box-shadow:0 0 0 0 rgba(232,96,10,.3)}50%{box-shadow:0 0 0 5px rgba(232,96,10,0)}}
+
+/* ─── VIEWS ─── */
+.view{display:none;flex:1;overflow:hidden;}
+.view.on{display:flex;}
+
+/* ─── SIDEBAR ─── */
+.sidebar{width:290px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden;}
+.sb-head{padding:9px 13px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;}
+.sb-ttl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);}
+.sb-badge{background:var(--s3);border:1px solid var(--b1);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;color:var(--txt3);}
+.sb-search{padding:7px 11px;border-bottom:1px solid var(--b1);}
+.sb-inp{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:5px 9px;color:var(--txt);font-family:var(--font);font-size:12px;outline:none;transition:border-color .14s;}
+.sb-inp:focus{border-color:var(--orange);}
+.sb-inp::placeholder{color:var(--txt3);}
+.sb-filters{padding:6px 11px;border-bottom:1px solid var(--b1);display:flex;gap:3px;flex-wrap:wrap;align-items:center;}
+.fb{font-size:9px;font-weight:700;letter-spacing:.04em;padding:3px 7px;border-radius:2px;border:1px solid transparent;cursor:pointer;transition:all .11s;background:var(--s3);color:var(--txt3);}
+.fb:hover{color:var(--txt);}
+.fb-country{font-size:8px;font-weight:700;letter-spacing:.08em;color:var(--txt3);text-transform:uppercase;padding:2px 4px 2px 2px;border-right:1px solid var(--b2);margin-right:1px;}
+.fb-sub{padding:3px 6px;margin-left:1px;font-size:8.5px;}
+.fb-sep{width:1px;height:14px;background:var(--b2);margin:0 2px;flex-shrink:0;}
+.fb[data-f="all"].on{background:var(--b2);color:var(--txt);}
+.fb[data-f="EP"].on,.fb[data-f="WP"].on,.fb[data-f="BH"].on,.fb[data-f="B2B"].on,.fb[data-f="CUSTOM"].on,.fb[data-f="UAE"].on,.fb[data-f="LB"].on{background:var(--odim);color:var(--orange);border-color:rgba(232,96,10,.35);}
+.loc-list{overflow-y:auto;flex:1;}
+.loc-item{padding:9px 13px;border-bottom:1px solid var(--b1);cursor:pointer;transition:background .1s;}
+.loc-item:hover{background:var(--s2);}
+.loc-item.active{background:var(--s2);border-left:2px solid var(--orange);padding-left:11px;}
+.li-top{display:flex;align-items:flex-start;gap:5px;margin-bottom:3px;}
+.li-name{font-weight:600;font-size:12px;line-height:1.3;flex:1;}
+.reg-tag{font-size:8px;font-weight:700;letter-spacing:.08em;padding:2px 5px;border-radius:2px;flex-shrink:0;text-transform:uppercase;}
+.rt-EP,.rt-WP,.rt-BH,.rt-B2B,.rt-CUSTOM,.rt-UAE,.rt-LB{background:rgba(148,163,184,.1);color:var(--txt3);}
+.li-pills{display:flex;gap:3px;flex-wrap:wrap;}
+.bp{display:flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 5px;border-radius:2px;}
+.bp-dot{width:4px;height:4px;border-radius:50%;}
+.li-scope{font-size:10px;color:var(--orange);font-weight:600;margin-top:3px;}
+
+/* ─── MAP ─── */
+.map-wrap{flex:1;position:relative;display:flex;}
+#map{flex:1;z-index:1;}
+#map.add-mode,#map.add-mode *{cursor:crosshair!important;}
+.map-hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--orange);color:#fff;padding:8px 18px;border-radius:16px;font-size:11px;font-weight:700;letter-spacing:.04em;z-index:800;pointer-events:none;display:none;box-shadow:0 3px 16px rgba(0,0,0,.5);white-space:nowrap;}
+.map-hint.show{display:block;}
+#name-bubble{position:absolute;background:var(--s1);border:1px solid var(--orange);border-radius:5px;padding:10px 11px;z-index:900;display:none;box-shadow:0 5px 20px rgba(0,0,0,.55);min-width:235px;}
+#name-bubble.show{display:block;}
+#nb-name{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:6px 8px;color:var(--txt);font-family:var(--font);font-size:12px;outline:none;}
+#nb-name:focus{border-color:var(--orange);}
+.bubble-selects{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px;}
+.bubble-selects select{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:5px 7px;color:var(--txt);font-family:var(--font);font-size:11px;outline:none;cursor:pointer;}
+.bubble-selects select option{background:var(--s2);}
+.bubble-btns{display:flex;gap:5px;margin-top:7px;}
+.bb{flex:1;height:28px;border-radius:var(--r);border:none;font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;}
+.bb.ok{background:var(--orange);color:#fff;}
+.bb.cancel{background:var(--s3);border:1px solid var(--b2);color:var(--txt2);}
+.bubble-hint{font-size:9px;color:var(--txt3);margin-top:3px;text-align:center;}
+
+/* ─── PANEL ─── */
+.panel{width:350px;flex-shrink:0;background:var(--s1);border-left:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform .26s ease;position:absolute;right:0;top:0;bottom:0;z-index:500;}
+.panel.open{transform:translateX(0);position:relative;}
+.panel-hd{padding:11px 13px;border-bottom:1px solid var(--b1);background:var(--s2);flex-shrink:0;}
+.ph-row{display:flex;align-items:flex-start;gap:5px;}
+.pname{font-size:14px;font-weight:800;flex:1;line-height:1.2;}
+.pmeta{font-size:10px;color:var(--txt3);margin-top:2px;}
+.px{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:16px;padding:0 2px;line-height:1;}
+.px:hover{color:var(--txt);}
+.ph-acts{display:flex;gap:4px;margin-top:7px;}
+.pa{flex:1;height:26px;background:var(--s3);border:1px solid var(--b2);color:var(--txt2);border-radius:var(--r);font-family:var(--font);font-size:10px;font-weight:600;cursor:pointer;transition:all .11s;}
+.pa:hover{color:var(--txt);}
+.pa.del:hover{color:#f87171;border-color:rgba(248,113,113,.3);}
+
+/* Panel tabs */
+.panel-tabs{display:flex;border-bottom:1px solid var(--b1);background:var(--s2);}
+.ptab{flex:1;height:32px;background:none;border:none;border-bottom:2px solid transparent;font-family:var(--font);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);cursor:pointer;transition:all .14s;}
+.ptab:hover{color:var(--txt2);}
+.ptab.on{color:var(--txt);border-bottom-color:var(--orange);}
+.ptab.scope-ptab.on{color:var(--orange);}
+.panel-page{display:none;padding:13px;overflow-y:auto;flex:1;}
+.panel-page.on{display:block;}
+
+/* Panel fields */
+.sec-lbl{font-size:8px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);margin-bottom:7px;}
+.psec{margin-bottom:14px;}
+.donut-row{display:flex;align-items:center;justify-content:center;gap:12px;padding:3px 0 10px;}
+.d-leg{font-size:11px;}
+.d-row{display:flex;align-items:center;gap:4px;margin-bottom:3px;}
+.d-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.d-lbl{color:var(--txt2);}
+.d-val{font-weight:700;margin-left:auto;min-width:16px;text-align:right;}
+.br-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.br-stripe{width:2px;height:28px;border-radius:1px;flex-shrink:0;}
+.br-lbl{font-weight:700;font-size:12px;flex:1;}
+.cnt{display:flex;align-items:center;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);overflow:hidden;}
+.cnt-btn{background:none;border:none;color:var(--txt2);cursor:pointer;width:24px;height:26px;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .1s;flex-shrink:0;}
+.cnt-btn:hover{background:var(--s3);color:var(--txt);}
+.cnt-inp{width:32px;text-align:center;font-family:'Archivo Narrow',sans-serif;font-size:13px;font-weight:600;color:var(--txt);background:none;border:none;border-left:1px solid var(--b2);border-right:1px solid var(--b2);outline:none;padding:0;height:26px;}
+.cnt-inp::-webkit-inner-spin-button{-webkit-appearance:none;}
+.bt-toggle{width:100%;height:26px;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);color:var(--txt2);font-family:var(--font);font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 9px;transition:all .11s;margin-top:2px;}
+.bt-toggle:hover{color:var(--txt);}
+.bt-toggle.open-t{background:var(--odim);border-color:var(--orange);color:var(--orange);}
+.boats-sec{display:none;margin-top:5px;margin-bottom:8px;}
+.boats-sec.open{display:block;}
+.tbl-wrap{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;margin-bottom:5px;}
+.btbl{width:100%;border-collapse:collapse;font-size:10px;}
+.btbl th{padding:5px 7px;background:var(--s3);font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);text-align:left;white-space:nowrap;}
+.btbl td{padding:4px 7px;border-top:1px solid var(--b1);color:var(--txt2);vertical-align:top;line-height:1.4;}
+.btbl tr:hover td{background:rgba(255,255,255,.015);}
+.btbl td.tc{font-weight:600;color:var(--txt);}
+.btbl td.scope-cell{color:var(--orange);font-weight:700;font-family:'Archivo Narrow',sans-serif;}
+.no-boats{text-align:center;padding:9px;color:var(--txt3);font-size:10px;font-style:italic;}
+.add-boat-btn{width:100%;height:26px;background:transparent;border:1px dashed var(--b2);border-radius:var(--r);color:var(--txt3);font-family:var(--font);font-size:10px;font-weight:600;cursor:pointer;transition:all .11s;}
+.add-boat-btn:hover:not(:disabled){border-color:var(--orange);color:var(--orange);}
+.add-boat-btn:disabled{opacity:.35;cursor:not-allowed;border-style:dashed;}
+.cap-msg{font-size:9px;color:var(--txt3);text-align:center;padding:3px 0 1px;font-style:italic;}
+.cap-msg.at-cap{color:var(--yellow);}
+.dup-warning{background:rgba(240,197,0,.08);border:1px solid rgba(240,197,0,.3);border-radius:var(--r);padding:8px 10px;margin-bottom:10px;display:none;}
+.dup-warning.show{display:block;}
+.dup-warning-title{font-size:10px;font-weight:700;color:var(--yellow);margin-bottom:4px;}
+.dup-warning-body{font-size:10px;color:var(--txt2);line-height:1.55;}
+.ba{background:none;border:none;cursor:pointer;font-size:11px;padding:1px 3px;border-radius:2px;line-height:1;}
+.ba:hover{opacity:.6;}
+.st-row{display:flex;gap:4px;}
+.st-btn{flex:1;height:26px;border-radius:var(--r);border:1px solid var(--b2);background:var(--bg);color:var(--txt3);font-family:var(--font);font-size:10px;font-weight:600;cursor:pointer;transition:all .11s;}
+.st-btn[data-s="visited"].on{background:rgba(235,238,245,.07);color:var(--txt);border-color:rgba(235,238,245,.3);}
+.st-btn[data-s="pending"].on{background:var(--odim);color:var(--orange);border-color:rgba(232,96,10,.38);}
+.st-btn[data-s="priority"].on{background:rgba(34,201,122,.07);color:var(--green);border-color:rgba(34,201,122,.28);}
+.notes-ta{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:7px 9px;color:var(--txt);font-family:var(--font);font-size:11px;resize:vertical;min-height:56px;outline:none;transition:border-color .14s;line-height:1.55;}
+.notes-ta:focus{border-color:var(--orange);}
+.notes-ta::placeholder{color:var(--txt3);}
+.save-btn{width:100%;height:34px;background:var(--orange);color:#fff;border:none;border-radius:var(--r);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;transition:background .14s;margin-top:3px;}
+.save-btn:hover{background:var(--oh);}
+.save-ok{text-align:center;font-size:10px;color:var(--green);margin-top:4px;height:13px;transition:opacity .3s;}
+
+/* ─── SCOPE PANEL PAGE ─── */
+.scope-box{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:11px 12px;margin-bottom:10px;}
+.scope-box-title{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-bottom:8px;}
+.scope-total-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid var(--b1);margin-top:5px;}
+.scope-total-lbl{font-size:11px;color:var(--txt2);}
+.scope-total-val{font-size:14px;font-weight:800;font-family:'Archivo Narrow',sans-serif;}
+.scope-kpi-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;}
+.scope-kpi{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:9px 10px;text-align:center;}
+.scope-kpi.highlight{border-color:rgba(232,96,10,.35);background:var(--odim);}
+.scope-kpi.green{border-color:rgba(34,201,122,.28);background:rgba(34,201,122,.06);}
+.scope-kpi.blue{border-color:rgba(59,158,255,.28);background:rgba(59,158,255,.06);}
+.sk-val{font-size:16px;font-weight:800;font-family:'Archivo Narrow',sans-serif;line-height:1;}
+.sk-lbl{font-size:8px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-top:4px;line-height:1.3;}
+.scope-boat-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--b1);}
+.scope-boat-row:last-child{border-bottom:none;}
+.sbi-name{font-size:11px;font-weight:600;flex:1;color:var(--txt2);}
+.sbi-brand{font-size:9px;font-weight:700;padding:2px 5px;border-radius:2px;}
+.sbi-input-wrap{display:flex;align-items:center;gap:0;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);overflow:hidden;transition:border-color .14s;}
+.sbi-input-wrap:focus-within{border-color:var(--orange);}
+.sbi-prefix{font-size:9px;font-weight:600;color:var(--txt3);padding:0 4px 0 7px;flex-shrink:0;white-space:nowrap;}
+.sbi-inp{width:90px;background:transparent;border:none;padding:5px 7px 5px 0;color:var(--orange);font-family:'Archivo Narrow',sans-serif;font-size:12px;font-weight:700;outline:none;text-align:right;}
+.sbi-inp::-webkit-inner-spin-button{-webkit-appearance:none;}
+.no-scope{font-size:11px;color:var(--txt3);text-align:center;padding:20px 0;font-style:italic;}
+.pct-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--b1);}
+.pct-row:last-child{border-bottom:none;}
+.pct-lbl{font-size:10px;color:var(--txt2);flex:1;}
+.pct-inp-wrap{display:flex;align-items:center;gap:0;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);overflow:hidden;transition:border-color .14s;}
+.pct-inp-wrap:focus-within{border-color:var(--orange);}
+.pct-inp{width:46px;background:transparent;border:none;padding:4px 4px 4px 7px;color:var(--txt);font-family:'Archivo Narrow',sans-serif;font-size:12px;font-weight:700;outline:none;text-align:right;}
+.pct-inp::-webkit-inner-spin-button{-webkit-appearance:none;}
+.pct-sym{font-size:11px;color:var(--txt3);padding:0 6px 0 2px;}
+
+/* ─── REVENUE SCOPE TAB (full page) ─── */
+#scope-view{display:none;flex:1;overflow:hidden;background:var(--bg);}
+#scope-view.on{display:flex;flex-direction:column;}
+.sv-head{padding:14px 20px 10px;border-bottom:1px solid var(--b1);flex-shrink:0;}
+.sv-head-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sv-title{font-size:18px;font-weight:800;letter-spacing:-.01em;}
+.sv-sub{font-size:11px;color:var(--txt3);margin-top:2px;}
+.sv-totals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.sv-kpi{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:12px 14px;}
+.sv-kpi.orange{border-color:rgba(232,96,10,.3);background:var(--odim);}
+.sv-kpi.green{border-color:rgba(34,201,122,.25);background:rgba(34,201,122,.05);}
+.sv-kpi.blue{border-color:rgba(59,158,255,.25);background:rgba(59,158,255,.05);}
+.sv-kpi-val{font-size:22px;font-weight:800;font-family:'Archivo Narrow',sans-serif;line-height:1;}
+.sv-kpi-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-top:4px;}
+.sv-kpi-sub{font-size:10px;color:var(--txt3);margin-top:2px;}
+.sv-body{flex:1;overflow-y:auto;padding:16px 20px;}
+.sv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;}
+.sv-card{background:var(--s1);border:1px solid var(--b1);border-radius:5px;overflow:hidden;transition:border-color .15s;}
+.sv-card:hover{border-color:var(--b2);}
+.sv-card-hd{padding:11px 13px;border-bottom:1px solid var(--b1);background:var(--s2);display:flex;align-items:center;gap:8px;}
+.sv-card-name{font-size:13px;font-weight:700;flex:1;line-height:1.2;}
+.sv-card-reg{font-size:8px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:2px;text-transform:uppercase;}
+.sv-card-body{padding:11px 13px;}
+.sv-card-scope{font-size:20px;font-weight:800;font-family:'Archivo Narrow',sans-serif;color:var(--txt);line-height:1;}
+.sv-card-scope-lbl{font-size:9px;color:var(--txt3);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;}
+.sv-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;}
+.sv-metric{background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:7px 8px;text-align:center;}
+.sv-metric.target{border-color:rgba(34,201,122,.25);background:rgba(34,201,122,.05);}
+.sv-metric.budget{border-color:rgba(59,158,255,.22);background:rgba(59,158,255,.04);}
+.sv-m-val{font-size:13px;font-weight:800;font-family:'Archivo Narrow',sans-serif;line-height:1;}
+.sv-m-lbl{font-size:8px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);margin-top:3px;line-height:1.3;}
+.sv-boats{margin-top:8px;}
+.sv-boat-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--b1);font-size:11px;}
+.sv-boat-row:last-child{border-bottom:none;}
+.sv-boat-name{flex:1;color:var(--txt2);}
+.sv-boat-scope{font-weight:700;font-family:'Archivo Narrow',sans-serif;color:var(--orange);}
+.sv-no-boats{font-size:10px;color:var(--txt3);font-style:italic;padding:6px 0;}
+.sv-bar-wrap{margin-top:7px;height:4px;background:var(--b1);border-radius:2px;overflow:hidden;}
+.sv-bar{height:100%;border-radius:2px;background:var(--orange);transition:width .4s ease;}
+.sv-filter-row{display:flex;gap:5px;margin-bottom:14px;}
+.sv-fb{font-size:10px;font-weight:700;padding:4px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--txt3);cursor:pointer;transition:all .12s;}
+.sv-fb:hover{color:var(--txt);}
+.sv-fb.on{background:var(--odim);border-color:var(--orange);color:var(--orange);}
+.sv-sort-row{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--txt3);margin-bottom:14px;}
+.sv-sort-row select{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:4px 8px;color:var(--txt2);font-family:var(--font);font-size:10px;outline:none;cursor:pointer;}
+.sv-sort-row select option{background:var(--s2);}
+.sv-head-controls{display:flex;align-items:center;gap:8px;}
+
+/* ─── MODALS ─── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .17s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--s1);border:1px solid var(--b2);border-top:2px solid var(--orange);border-radius:5px;width:450px;max-width:96vw;max-height:88vh;overflow-y:auto;transform:translateY(11px);transition:transform .17s;box-shadow:0 18px 48px rgba(0,0,0,.6);}
+.overlay.open .modal{transform:translateY(0);}
+.modal-hd{padding:13px 15px 9px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:13px;font-weight:800;}
+.modal-x{background:none;border:none;color:var(--txt3);font-size:17px;cursor:pointer;line-height:1;}
+.modal-x:hover{color:var(--txt);}
+.modal-body{padding:13px 15px;}
+.fl{margin-bottom:11px;}
+.fl-lbl{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);margin-bottom:4px;display:block;}
+.fi{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:6px 9px;color:var(--txt);font-family:var(--font);font-size:12px;outline:none;transition:border-color .14s;}
+.fi:focus{border-color:var(--orange);}
+.fi::placeholder{color:var(--txt3);}
+select.fi{cursor:pointer;}
+select.fi option{background:var(--s2);}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.modal-foot{padding:9px 15px;border-top:1px solid var(--b1);display:flex;gap:6px;}
+.mb{flex:1;height:32px;border-radius:var(--r);border:none;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;transition:all .12s;}
+.mb.ok{background:var(--orange);color:#fff;}
+.mb.ok:hover{background:var(--oh);}
+.mb.cc{background:var(--s3);border:1px solid var(--b2);color:var(--txt2);}
+.mb.cc:hover{color:var(--txt);}
+
+/* scope input in boat modal */
+.scope-inp-wrap{position:relative;}
+.scope-inp-wrap .fi{padding-left:42px;color:var(--orange);font-weight:700;font-family:'Archivo Narrow',sans-serif;font-size:13px;}
+.scope-curr{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:600;color:var(--txt3);pointer-events:none;letter-spacing:.03em;}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.ld-bar{width:180px;height:2px;background:var(--b1);border-radius:1px;overflow:hidden;}
+.ld-fill{height:100%;background:var(--orange);border-radius:1px;animation:ldf 1.8s ease-in-out infinite;}
+@keyframes ldf{0%{width:0;margin-left:0}50%{width:55%;margin-left:22%}100%{width:0;margin-left:100%}}
+
+/* SUMMARY BAR */
+.sumbar{background:var(--s1);border-top:1px solid var(--b1);padding:4px 16px;display:flex;gap:14px;align-items:center;flex-shrink:0;}
+.si{display:flex;align-items:center;gap:4px;font-size:10px;}
+.si-dot{width:5px;height:5px;border-radius:50%;}
+.si-l{color:var(--txt3);}
+.si-v{font-weight:700;}
+
+/* Leaflet */
+.leaflet-popup-content-wrapper{background:var(--s2)!important;border:1px solid var(--b2)!important;border-top:2px solid var(--orange)!important;border-radius:5px!important;box-shadow:0 7px 26px rgba(0,0,0,.5)!important;color:var(--txt)!important;font-family:var(--font)!important;}
+.leaflet-popup-tip{background:var(--s2)!important;}
+.leaflet-popup-content{margin:9px 11px!important;}
+.leaflet-control-zoom a{background:var(--s2)!important;color:var(--txt)!important;border-color:var(--b2)!important;}
+.leaflet-control-zoom a:hover{background:var(--b1)!important;}
+.leaflet-control-attribution{background:rgba(26,26,26,.85)!important;color:var(--txt3)!important;font-size:8px!important;}
+.leaflet-control-attribution a{color:var(--txt3)!important;}
+.pop-name{font-size:12px;font-weight:800;margin-bottom:4px;}
+.pop-open{width:100%;height:26px;background:var(--orange);color:#fff;border:none;border-radius:3px;font-family:var(--font);font-size:10px;font-weight:700;cursor:pointer;margin-top:4px;}
+.pop-open:hover{background:var(--oh);}
+
+.toast{position:fixed;bottom:44px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--s2);border:1px solid var(--b2);border-left:3px solid var(--orange);color:var(--txt);padding:6px 13px;border-radius:var(--r);font-size:11px;font-weight:600;opacity:0;transition:all .23s;z-index:9999;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <img src="https://amitmarineltd.com/wp-content/uploads/2025/12/AML-logo.png" style="height:36px;object-fit:contain;" onerror="this.outerHTML='<div style=\'font-size:22px;font-weight:800;color:var(--orange);letter-spacing:.06em;font-family:Archivo,sans-serif;\'>AMIT MARINE</div>'">
+  <div style="font-size:10px;color:var(--txt3);letter-spacing:.1em;">Loading field data…</div>
+  <div class="ld-bar"><div class="ld-fill"></div></div>
+</div>
+
+<header>
+  <img class="logo" src="https://amitmarineltd.com/wp-content/uploads/2025/12/AML-logo.png" alt="AMIT Marine"
+    onerror="this.outerHTML='<div style=\'font-size:14px;font-weight:800;color:var(--orange);letter-spacing:.04em;font-family:Archivo,sans-serif;\'>AMIT</div>'">
+  <div class="hd-sep"></div>
+  <div class="hd-title">Field Tracker</div>
+  <div class="hd-tabs">
+    <button class="htab on" onclick="switchView('map')">🗺 Map</button>
+    <button class="htab scope-tab" onclick="switchView('scope')">📊 Revenue Scope</button>
+  </div>
+  <div class="db-status" style="margin-left:10px;">
+    <div class="db-dot" id="db-dot"></div>
+    <span id="db-lbl" style="font-size:10px;color:var(--txt3);">connecting…</span>
+  </div>
+  <div class="hd-stats">
+    <div class="hst"><div class="hst-n" id="hs-total" style="color:var(--txt)">0</div><div class="hst-l">Boats</div></div>
+    <div class="hst"><div class="hst-n" id="hs-mercury" style="color:var(--orange)">0</div><div class="hst-l">Mercury</div></div>
+    <div class="hst"><div class="hst-n" id="hs-comp" style="color:var(--blue)">0</div><div class="hst-l">Competitors</div></div>
+    <div class="hst"><div class="hst-n" id="hs-scope" style="color:var(--orange)">SAR 0</div><div class="hst-l">Total Scope</div></div>
+  </div>
+  <div class="hd-btns">
+    <button class="hbtn orange" id="add-btn" onclick="toggleAddMode()">＋ Add Location</button>
+    <button class="hbtn" onclick="exportData()">⬇ Export</button>
+    <button class="hbtn" onclick="resetAll()">↺ Reset</button>
+  </div>
+</header>
+
+<!-- MAP VIEW -->
+<div class="view on" id="map-view">
+  <div class="sidebar">
+    <div class="sb-head"><span class="sb-ttl">Locations</span><span class="sb-badge" id="loc-count">0</span></div>
+    <div class="sb-search"><input class="sb-inp" placeholder="Search locations…" oninput="filterSearch(this.value)"></div>
+    <div class="sb-filters">
+      <button class="fb on" data-f="all" onclick="setFilter('all',this)">All</button>
+      <span class="fb-sep"></span>
+      <span class="fb-country">🇸🇦 Saudi</span>
+      <button class="fb fb-sub" data-f="EP" onclick="setFilter('EP',this)">Eastern</button>
+      <button class="fb fb-sub" data-f="WP" onclick="setFilter('WP',this)">Western</button>
+      <span class="fb-sep"></span>
+      <button class="fb" data-f="BH" onclick="setFilter('BH',this)">🇧🇭 Bahrain</button>
+      <button class="fb" data-f="UAE" onclick="setFilter('UAE',this)">🇦🇪 UAE</button>
+      <button class="fb" data-f="LB" onclick="setFilter('LB',this)">🇱🇧 Lebanon</button>
+      <span class="fb-sep"></span>
+      <button class="fb" data-f="B2B" onclick="setFilter('B2B',this)">🏗 B2B</button>
+      <button class="fb" data-f="CUSTOM" onclick="setFilter('CUSTOM',this)">📍 Custom</button>
+    </div>
+    <div class="loc-list" id="loc-list"></div>
+  </div>
+
+  <div class="map-wrap">
+    <div class="map-hint" id="map-hint">📍 Click the map to place a location pin</div>
+    <div id="map"></div>
+    <div id="name-bubble">
+      <input id="nb-name" placeholder="Location name *" autocomplete="off">
+      <div class="bubble-selects">
+        <select id="nb-type"><option>Marina</option><option>Yacht Club</option><option>Fishing Harbor</option><option>Beach / Boat Hub</option><option>Waterfront</option><option>B2B Project</option><option>Other</option></select>
+        <select id="nb-region"><optgroup label="🇸🇦 Saudi Arabia"><option value="EP">Eastern Province</option><option value="WP">Western Province</option></optgroup><optgroup label="Other Countries"><option value="BH">🇧🇭 Bahrain</option><option value="UAE">🇦🇪 UAE</option><option value="LB">🇱🇧 Lebanon</option></optgroup><optgroup label="Other"><option value="B2B">🏗 B2B</option><option value="CUSTOM">📍 Other</option></optgroup></select>
+      </div>
+      <div class="bubble-btns">
+        <button class="bb cancel" onclick="cancelBubble()">Cancel</button>
+        <button class="bb ok" onclick="confirmBubble()">Add</button>
+      </div>
+      <div class="bubble-hint">Enter to confirm · Esc to cancel</div>
+    </div>
+  </div>
+
+  <!-- EDIT PANEL -->
+  <div class="panel" id="panel">
+    <div class="panel-hd">
+      <div class="ph-row"><div><div class="pname" id="pname">—</div><div class="pmeta" id="pmeta"></div></div><button class="px" onclick="closePanel()">✕</button></div>
+      <div class="ph-acts"><button class="pa" onclick="openEditLoc()">✏ Edit Info</button><button class="pa del" onclick="deleteLoc()">🗑 Delete</button></div>
+    </div>
+    <div class="panel-tabs">
+      <button class="ptab on" data-pt="field" onclick="switchPTab('field',this)">Field Data</button>
+      <button class="ptab scope-ptab" data-pt="scope" onclick="switchPTab('scope',this)">💰 Scope</button>
+    </div>
+
+    <!-- FIELD DATA PAGE -->
+    <div class="panel-page on" id="pp-field">
+      <div class="psec"><div class="sec-lbl">Brand Breakdown</div>
+        <div class="donut-row"><svg width="74" height="74" viewBox="0 0 74 74" id="donut"></svg><div class="d-leg" id="d-leg"></div></div>
+      </div>
+      <div class="psec"><div class="sec-lbl">Boat Counts by Brand</div><div id="brand-rows"></div></div>
+      <div class="psec"><div class="sec-lbl">Visit Status</div>
+        <div class="st-row">
+          <button class="st-btn" data-s="pending" onclick="setSt('pending',this)">🟠 Pending</button>
+          <button class="st-btn" data-s="visited" onclick="setSt('visited',this)">⬜ Visited</button>
+          <button class="st-btn" data-s="priority" onclick="setSt('priority',this)">✅ Fully Documented</button>
+        </div>
+      </div>
+      <div class="psec"><div class="sec-lbl">Field Notes</div>
+        <textarea class="notes-ta" id="notes-ta" placeholder="Observations, contacts, next steps…"></textarea>
+      </div>
+      <button class="save-btn" onclick="savePanel()">Save Changes</button>
+      <div class="save-ok" id="save-ok"></div>
+    </div>
+
+    <!-- SCOPE PAGE -->
+    <div class="panel-page" id="pp-scope">
+      <div class="psec">
+        <div class="sec-lbl">Scope Settings — This Location</div>
+        <div style="background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);padding:8px 10px;margin-bottom:10px;">
+          <div class="pct-row">
+            <div class="pct-lbl">
+              <div style="font-weight:600;">Target %</div>
+              <div style="font-size:9px;color:var(--txt3);">Top N boats by value (e.g. 70% of 10 = top 7)</div>
+            </div>
+            <div class="pct-inp-wrap">
+              <input class="pct-inp" id="pct-target" type="number" min="1" max="100" value="70" oninput="onPctChange()">
+              <span class="pct-sym">%</span>
+            </div>
+          </div>
+          <div class="pct-row">
+            <div class="pct-lbl">
+              <div style="font-weight:600;">Marketing Budget %</div>
+              <div style="font-size:9px;color:var(--txt3);">% of target value allocated to marketing</div>
+            </div>
+            <div class="pct-inp-wrap">
+              <input class="pct-inp" id="pct-budget" type="number" min="1" max="100" value="5" oninput="onPctChange()">
+              <span class="pct-sym">%</span>
+            </div>
+          </div>
+          <div class="pct-row">
+            <div class="pct-lbl">
+              <div style="font-weight:600;color:var(--orange);">Include Mercury in Scope</div>
+              <div style="font-size:9px;color:var(--txt3);">Mercury boats are yours — include their upgrade/upsell value in scope calculations</div>
+            </div>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;">
+              <div style="position:relative;width:36px;height:20px;">
+                <input type="checkbox" id="toggle-mercury-scope" onchange="onPctChange()" style="opacity:0;width:0;height:0;position:absolute;">
+                <div id="toggle-mercury-track" style="position:absolute;inset:0;border-radius:10px;background:var(--b2);transition:background .2s;"></div>
+                <div id="toggle-mercury-thumb" style="position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.4);"></div>
+              </div>
+              <span id="toggle-mercury-lbl" style="font-size:10px;font-weight:600;color:var(--txt3);">Off</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="psec">
+        <div class="sec-lbl">Revenue Scope per Boat</div>
+        <p style="font-size:10px;color:var(--txt3);margin-bottom:8px;line-height:1.5;">Enter estimated Mercury replacement profit per boat. Target picks the highest-value boats first.</p>
+        <div id="scope-boat-list"></div>
+      </div>
+      <div class="psec" id="scope-summary-box" style="display:none;">
+        <div class="sec-lbl">Location Scope Summary</div>
+        <div class="scope-kpi-grid">
+          <div class="scope-kpi highlight"><div class="sk-val" id="sk-total">SAR 0</div><div class="sk-lbl">Total Scope</div></div>
+          <div class="scope-kpi green"><div class="sk-val" id="sk-target">SAR 0</div><div class="sk-lbl" id="sk-target-lbl">Target (70%)</div></div>
+          <div class="scope-kpi blue"><div class="sk-val" id="sk-budget">SAR 0</div><div class="sk-lbl" id="sk-budget-lbl">Mktg Budget (5%)</div></div>
+        </div>
+        <div style="margin-top:8px;font-size:9px;color:var(--txt3);line-height:1.6;" id="sk-explain"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REVENUE SCOPE VIEW -->
+<div id="scope-view">
+  <div class="sv-head">
+    <div class="sv-head-row">
+      <div><div class="sv-title">Revenue Scope Intelligence</div><div class="sv-sub">Mercury replacement opportunity across all marinas</div></div>
+      <div class="sv-head-controls">
+        <select id="sv-sort" onchange="renderScopeView()" style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 10px;color:var(--txt2);font-family:var(--font);font-size:11px;outline:none;cursor:pointer;">
+          <option value="scope-desc">Sort: Highest Scope</option>
+          <option value="scope-asc">Sort: Lowest Scope</option>
+          <option value="target-desc">Sort: Highest Target</option>
+          <option value="name">Sort: Name A–Z</option>
+        </select>
+      </div>
+    </div>
+    <div class="sv-totals" id="sv-totals"></div>
+  </div>
+  <div class="sv-body">
+    <div class="sv-filter-row" id="sv-filters"></div>
+    <div class="sv-grid" id="sv-grid"></div>
+  </div>
+</div>
+
+<!-- SUMMARY BAR -->
+<div class="sumbar">
+  <div class="si"><div class="si-dot" style="background:var(--orange)"></div><span class="si-l">Mercury:</span><span class="si-v" id="sm-mercury">0</span><span style="color:var(--txt3);font-size:9px;" id="sm-pct">(0%)</span></div>
+  <div class="si"><div class="si-dot" style="background:var(--blue)"></div><span class="si-l">Yamaha:</span><span class="si-v" id="sm-yamaha">0</span></div>
+  <div class="si"><div class="si-dot" style="background:var(--green)"></div><span class="si-l">Honda:</span><span class="si-v" id="sm-honda">0</span></div>
+  <div class="si"><div class="si-dot" style="background:var(--yellow)"></div><span class="si-l">Suzuki:</span><span class="si-v" id="sm-suzuki">0</span></div>
+  <div class="si"><div class="si-dot" style="background:var(--purple)"></div><span class="si-l">Other:</span><span class="si-v" id="sm-other">0</span></div>
+  <div style="margin-left:auto;font-size:9px;color:var(--txt3);">Click <strong style="color:var(--orange)">＋ Add Location</strong> then tap map · Open location → 💰 Scope tab to enter profit estimates</div>
+</div>
+
+<!-- EDIT LOC MODAL -->
+<div class="overlay" id="el-ov" onclick="if(event.target===this)closeEditLoc()">
+<div class="modal">
+  <div class="modal-hd"><div class="modal-title">Edit Location</div><button class="modal-x" onclick="closeEditLoc()">✕</button></div>
+  <div class="modal-body">
+    <div class="fl"><label class="fl-lbl">Name *</label><input class="fi" id="el-name" placeholder="Location name"></div>
+    <div class="fl"><label class="fl-lbl">Type</label><select class="fi" id="el-type"><option>Marina</option><option>Yacht Club</option><option>Fishing Harbor</option><option>Beach / Boat Hub</option><option>Waterfront</option><option>B2B Project</option><option>Other</option></select></div>
+    <div class="fl"><label class="fl-lbl">Region</label><select class="fi" id="el-region"><optgroup label="🇸🇦 Saudi Arabia"><option value="EP">Eastern Province</option><option value="WP">Western Province</option></optgroup><optgroup label="Other Countries"><option value="BH">🇧🇭 Bahrain</option><option value="UAE">🇦🇪 UAE</option><option value="LB">🇱🇧 Lebanon</option></optgroup><optgroup label="Other"><option value="B2B">🏗 B2B</option><option value="CUSTOM">📍 Other</option></optgroup></select></div>
+    <div class="fl"><label class="fl-lbl">Coordinates</label><div class="fg2"><input class="fi" id="el-lat" placeholder="Latitude" type="number" step="any"><input class="fi" id="el-lng" placeholder="Longitude" type="number" step="any"></div></div>
+    <div class="fl"><label class="fl-lbl">Description</label><textarea class="fi" id="el-note" rows="3" style="resize:vertical;line-height:1.5;" placeholder="Key info, notes…"></textarea></div>
+  </div>
+  <div class="modal-foot"><button class="mb cc" onclick="closeEditLoc()">Cancel</button><button class="mb ok" onclick="saveEditLoc()">Save</button></div>
+</div></div>
+
+<!-- BOAT MODAL -->
+<div class="overlay" id="bm-ov" onclick="if(event.target===this)closeBoatModal()">
+<div class="modal">
+  <div class="modal-hd"><div class="modal-title" id="bm-title">Add Boat</div><button class="modal-x" onclick="closeBoatModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="dup-warning" id="dup-warning">
+      <div class="dup-warning-title">⚠ Boat ID Already Exists</div>
+      <div class="dup-warning-body" id="dup-warning-body"></div>
+    </div>
+    <div class="fl"><label class="fl-lbl">Brand</label><select class="fi" id="bm-brand"><option value="mercury">Mercury</option><option value="yamaha">Yamaha</option><option value="honda">Honda</option><option value="suzuki">Suzuki</option><option value="other">Other</option></select></div>
+    <div class="fl"><label class="fl-lbl">Boat Details &nbsp;<span style="color:#f87171;">★ Boat ID required</span></label>
+      <div class="fg2" style="margin-bottom:6px;"><input class="fi" id="bm-bid" placeholder="Boat ID / Hull No. *" oninput="checkDupId(this.value)" style="border-color:var(--b2);" onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor=this.value.trim()?'var(--b2)':'rgba(248,113,113,.5)'"><input class="fi" id="bm-bname" placeholder="Boat Name"></div>
+      <div class="fg2"><input class="fi" id="bm-engine" placeholder="Engine e.g. V8 300HP"><input class="fi" id="bm-year" placeholder="Year" type="number"></div>
+    </div>
+    <div class="fl"><label class="fl-lbl">Owner Details</label>
+      <div class="fg2" style="margin-bottom:6px;"><input class="fi" id="bm-owner" placeholder="Owner Name *"><input class="fi" id="bm-phone" placeholder="Phone / WhatsApp"></div>
+      <div class="fg2"><input class="fi" id="bm-email" placeholder="Email"><input class="fi" id="bm-company" placeholder="Company"></div>
+    </div>
+    <div class="fl"><label class="fl-lbl">💰 Mercury Replacement Scope (SAR)</label>
+      <div class="scope-inp-wrap"><span class="scope-curr">SAR</span><input class="fi" id="bm-scope" placeholder="e.g. 45000" type="number" min="0" step="500"></div>
+      <div style="font-size:9px;color:var(--txt3);margin-top:3px;">Estimated profit if this boat switches to Mercury. Used for scope calculations.</div>
+    </div>
+    <div class="fl"><label class="fl-lbl">Notes</label><textarea class="fi" id="bm-notes" rows="2" style="resize:vertical;line-height:1.5;" placeholder="Service history, follow-up, lead status…"></textarea></div>
+    <input type="hidden" id="bm-eid">
+  </div>
+  <div class="modal-foot"><button class="mb cc" onclick="closeBoatModal()">Cancel</button><button class="mb ok" id="bm-ok" onclick="saveBoat()">Add Boat</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══ BRANDS ═══ */
+const BRANDS=[
+  {key:'mercury',label:'Mercury',color:'#e8600a'},
+  {key:'yamaha', label:'Yamaha', color:'#3b9eff'},
+  {key:'honda',  label:'Honda',  color:'#22c97a'},
+  {key:'suzuki', label:'Suzuki', color:'#f0c500'},
+  {key:'other',  label:'Other',  color:'#c084fc'},
+];
+const DEFS=[
+  {id:1,name:'Bahrain Yacht Club',region:'BH',lat:26.1142,lng:50.6322,type:'Yacht Club',note:'Founded 1955. 135 wet moorings.'},
+  {id:2,name:'Amwaj Marina',region:'BH',lat:26.2926,lng:50.6599,type:'Marina',note:'141 berths. Hosts Bahrain Boat Show. TOP PRIORITY.'},
+  {id:3,name:'Bahrain Marina (Manama)',region:'BH',lat:26.2376,lng:50.5984,type:'Marina',note:'New premium marina. Verado showcase opportunity.'},
+  {id:4,name:'Danat Al Bahrain Yacht Club',region:'BH',lat:25.8680,lng:50.6096,type:'Yacht Club',note:'Southern Bahrain. Hawar Islands departure point.'},
+  {id:5,name:'Durrat Al Bahrain',region:'BH',lat:25.8334,lng:50.6139,type:'Marina',note:'Affluent private island residential.'},
+  {id:6,name:'Half Moon Beach — Al Khobar',region:'EP',lat:26.1901,lng:50.0519,type:'Beach / Boat Hub',note:'Most popular boating beach in Eastern Province.'},
+  {id:7,name:'Khobar Corniche',region:'EP',lat:26.2863,lng:50.2212,type:'Waterfront',note:'Major public waterfront.'},
+  {id:8,name:'Dammam Corniche Boats Dock',region:'EP',lat:26.4717,lng:50.1333,type:'Fishing Harbor',note:'Traditional fishing boat hub. SeaPro audience.'},
+  {id:9,name:'Al Fanateer Marina, Jubail',region:'EP',lat:27.1348,lng:49.5691,type:'Marina',note:'Active marina. Large volume of boat operators.'},
+  {id:10,name:'Ras Tanura Beach',region:'EP',lat:26.7623,lng:50.0412,type:'Beach / Boat Hub',note:'Aramco community. Affluent boating residents.'},
+  {id:11,name:'Qatif Central Fish Market',region:'EP',lat:26.5518,lng:50.0287,type:'Fishing Harbor',note:'Major fishing community. SeaPro buyers.'},
+  {id:12,name:'Tarout Fish Market, Qatif',region:'EP',lat:26.5700,lng:50.0634,type:'Fishing Harbor',note:'Tarout Island. Working boat owners.'},
+  {id:13,name:'Dareen Marina, Jubail',region:'EP',lat:27.1674,lng:49.5649,type:'Marina',note:'Families and leisure boaters.'},
+  {id:14,name:'Jeddah Yacht Club & Marina',region:'WP',lat:21.6534,lng:39.1019,type:'Yacht Club',note:'95 berths, Port of Entry. Verado territory.'},
+  {id:15,name:'Marina Aziziyah — Yanbu',region:'WP',lat:24.0726,lng:38.0524,type:'Marina',note:'Red Sea marina. Boat rental operators.'},
+  {id:16,name:'NEOM Marine Zone',region:'B2B',lat:28.2000,lng:35.2000,type:'B2B Project',note:'New marina ecosystem. No incumbent.'},
+  {id:17,name:'Red Sea Project — Amaala',region:'B2B',lat:28.0500,lng:35.4500,type:'B2B Project',note:'Ultra-luxury development. Fleet deal opportunity.'},
+];
+
+/* ═══ STATE ═══ */
+let locs=[],filter='all',search='',activeId=null;
+let leafMarkers={},map;
+let addMode=false,pendingLL=null;
+let openBoatSecs={},editingBoat=null,editLocId=null;
+let nextLocId=100,nextBoatId=1000;
+let currentView='map';
+let svFilter='all';
+
+/* ═══ DB ═══ */
+const SUPA_URL = 'https://dgvwjqfvcjjewokjzaqr.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRndndqcWZ2Y2pqZXdva2p6YXFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNDAwNzEsImV4cCI6MjA4ODYxNjA3MX0.zS3aznDUKV-YfuI2m_rDb54rcHiEZFQIM3Emo_sESWE';
+
+/* Show status dot */
+function dbSt(s) {
+  const dot = document.getElementById('db-dot');
+  const lbl = document.getElementById('db-lbl');
+  dot.className = 'db-dot';
+  if (s === 'ok')     { dot.classList.add('ok');     lbl.textContent = 'Synced'; }
+  else if (s === 'saving') { dot.classList.add('saving'); lbl.textContent = 'Saving...'; }
+  else if (s === 'err')    { dot.classList.add('err');    lbl.textContent = 'Offline'; }
+}
+
+/* Base fetch wrapper - all requests go through here */
+function sbFetch(table, method, body, extraHeaders) {
+  const headers = {
+    'apikey':        SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type':  'application/json'
+  };
+  if (extraHeaders) Object.assign(headers, extraHeaders);
+  const opts = { method: method, headers: headers };
+  if (body) opts.body = JSON.stringify(body);
+  return fetch(SUPA_URL + '/rest/v1/' + table, opts);
+}
+
+/* ── LOAD on startup ── */
+async function dbLoad() {
+  dbSt('saving');
+  try {
+    // 1. Fetch locations
+    const locRes = await sbFetch('locations?select=*&order=id', 'GET', null, null);
+    if (!locRes.ok) throw new Error('Load locations failed: ' + await locRes.text());
+    const locRows = await locRes.json();
+
+    // 2. Fetch boats
+    const boatRes = await sbFetch('boats?select=*', 'GET', null, null);
+    if (!boatRes.ok) throw new Error('Load boats failed: ' + await boatRes.text());
+    const boatRows = await boatRes.json();
+
+    // 3. Group boats by location_id → brand
+    const boatsByLoc = {};
+    boatRows.forEach(b => {
+      if (!boatsByLoc[b.location_id]) boatsByLoc[b.location_id] = {};
+      if (!boatsByLoc[b.location_id][b.brand]) boatsByLoc[b.location_id][b.brand] = [];
+      boatsByLoc[b.location_id][b.brand].push({
+        id: b.id, brand: b.brand, boatId: b.boat_id, boatName: b.boat_name,
+        engine: b.engine, year: b.year, owner: b.owner, phone: b.phone,
+        email: b.email, company: b.company, scope: b.scope, notes: b.notes
+      });
+    });
+
+    // 4. If no locations in DB yet — first run, insert defaults
+    if (!locRows || locRows.length === 0) {
+      locs = DEFS.map(d => ({
+        ...d, mercury:0, yamaha:0, honda:0, suzuki:0, other:0,
+        status:'pending', notes:'', boats:{}, targetPct:70, budgetPct:5, includeMercury:false
+      }));
+      await dbInsertDefaults();
+    } else {
+      // 5. Merge DB rows onto DEFS
+      const saved = {};
+      locRows.forEach(r => { saved[r.id] = r; });
+      locs = DEFS.map(d => {
+        const s = saved[d.id] || {};
+        return {
+          ...d,
+          mercury:      s.mercury      || 0,
+          yamaha:       s.yamaha       || 0,
+          honda:        s.honda        || 0,
+          suzuki:       s.suzuki       || 0,
+          other:        s.other        || 0,
+          status:       s.status       || 'pending',
+          notes:        s.notes        || '',
+          targetPct:    s.target_pct   != null ? s.target_pct  : 70,
+          budgetPct:    s.budget_pct   != null ? s.budget_pct  : 5,
+          includeMercury: s.include_mercury || false,
+          boats:        boatsByLoc[d.id] || {}
+        };
+      });
+      // Also load any custom locations (id >= 100)
+      locRows.filter(r => r.id >= 100).forEach(r => {
+        if (!locs.find(l => l.id === r.id)) {
+          locs.push({
+            ...r,
+            targetPct: r.target_pct != null ? r.target_pct : 70,
+            budgetPct: r.budget_pct != null ? r.budget_pct : 5,
+            includeMercury: r.include_mercury || false,
+            boats: boatsByLoc[r.id] || {}
+          });
+        }
+      });
+    }
+    dbSt('ok');
+  } catch(err) {
+    console.error('dbLoad error:', err);
+    dbSt('err');
+    // Fall back to empty defaults so app still works offline
+    locs = DEFS.map(d => ({
+      ...d, mercury:0, yamaha:0, honda:0, suzuki:0, other:0,
+      status:'pending', notes:'', boats:{}, targetPct:70, budgetPct:5, includeMercury:false
+    }));
+  }
+}
+
+/* ── INSERT defaults on very first run ── */
+async function dbInsertDefaults() {
+  const rows = DEFS.map(d => ({
+    id: d.id, name: d.name, region: d.region, type: d.type,
+    lat: d.lat, lng: d.lng, note: d.note || '',
+    mercury:0, yamaha:0, honda:0, suzuki:0, other:0,
+    status:'pending', notes:'', target_pct:70, budget_pct:5, include_mercury:false
+  }));
+  const r = await sbFetch('locations', 'POST', rows, {'Prefer': 'return=minimal'});
+  if (!r.ok) console.error('Insert defaults failed:', await r.text());
+}
+
+/* ── SAVE location data ── */
+let saveTimer = null;
+function sched(ms) { clearTimeout(saveTimer); saveTimer = setTimeout(dbSave, ms || 600); }
+
+async function dbSave() {
+  dbSt('saving');
+  try {
+    // For each location: UPDATE via PATCH if exists, skip if not changed
+    // We use upsert: POST with Prefer: resolution=merge-duplicates
+    const rows = locs.map(l => ({
+      id:              l.id,
+      name:            l.name,
+      region:          l.region,
+      type:            l.type,
+      lat:             l.lat,
+      lng:             l.lng,
+      note:            l.note  || '',
+      mercury:         l.mercury  || 0,
+      yamaha:          l.yamaha   || 0,
+      honda:           l.honda    || 0,
+      suzuki:          l.suzuki   || 0,
+      other:           l.other    || 0,
+      status:          l.status   || 'pending',
+      notes:           l.notes    || '',
+      target_pct:      l.targetPct   != null ? l.targetPct  : 70,
+      budget_pct:      l.budgetPct   != null ? l.budgetPct  : 5,
+      include_mercury: l.includeMercury || false
+    }));
+    const r = await sbFetch('locations', 'POST', rows, {
+      'Prefer': 'resolution=merge-duplicates,return=minimal'
+    });
+    if (!r.ok) throw new Error('Save failed: ' + await r.text());
+    dbSt('ok');
+  } catch(err) {
+    console.error('dbSave error:', err);
+    dbSt('err');
+  }
+}
+
+/* ── SAVE a single boat ── */
+async function saveBoatToDb(boat, locId) {
+  try {
+    const row = {
+      id:          String(boat.id),
+      location_id: locId,
+      brand:       boat.brand       || '',
+      boat_id:     boat.boatId      || '',
+      boat_name:   boat.boatName    || '',
+      engine:      boat.engine      || '',
+      year:        boat.year        || '',
+      owner:       boat.owner       || '',
+      phone:       boat.phone       || '',
+      email:       boat.email       || '',
+      company:     boat.company     || '',
+      scope:       boat.scope       || 0,
+      notes:       boat.notes       || ''
+    };
+    const r = await sbFetch('boats', 'POST', [row], {
+      'Prefer': 'resolution=merge-duplicates,return=minimal'
+    });
+    if (!r.ok) console.error('saveBoat failed:', await r.text());
+  } catch(err) {
+    console.error('saveBoatToDb error:', err);
+  }
+}
+
+/* ── DELETE a single boat ── */
+async function deleteBoatFromDb(boatId) {
+  try {
+    const r = await sbFetch('boats?id=eq.' + String(boatId), 'DELETE', null, null);
+    if (!r.ok) console.error('deleteBoat failed:', await r.text());
+  } catch(err) {
+    console.error('deleteBoatFromDb error:', err);
+  }
+}
+
+/* ═══ VIEW SWITCH ═══ */
+function switchView(v){
+  currentView=v;
+  document.getElementById('map-view').classList.toggle('on',v==='map');
+  document.getElementById('scope-view').classList.toggle('on',v==='scope');
+  document.querySelectorAll('.htab').forEach(t=>{
+    const tgt=t.textContent.includes('Map')?'map':'scope';
+    t.classList.toggle('on',tgt===v);
+  });
+  if(v==='scope')renderScopeView();
+}
+
+/* ═══ MAP ═══ */
+function initMap(){
+  map=L.map('map',{zoomControl:true,preferCanvas:true,minZoom:3,maxZoom:18,maxBounds:[[-90,-180],[90,180]],maxBoundsViscosity:1.0}).setView([26.5,50.2],6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CartoDB',subdomains:'abcd',maxZoom:19,minZoom:3}).addTo(map);
+  map.on('click',e=>{if(!addMode)return;pendingLL={lat:e.latlng.lat,lng:e.latlng.lng};showBubble(e.originalEvent.clientX,e.originalEvent.clientY);});
+  locs.forEach(addMarker);
+}
+
+/* ═══ ADD MODE ═══ */
+function toggleAddMode(){
+  addMode=!addMode;
+  const btn=document.getElementById('add-btn');
+  if(addMode){btn.classList.add('add-on');btn.textContent='✕ Cancel';document.getElementById('map').classList.add('add-mode');document.getElementById('map-hint').classList.add('show');}
+  else cancelAddMode();
+}
+function cancelAddMode(){addMode=false;pendingLL=null;const btn=document.getElementById('add-btn');btn.classList.remove('add-on');btn.textContent='＋ Add Location';document.getElementById('map').classList.remove('add-mode');document.getElementById('map-hint').classList.remove('show');hideBubble();}
+
+function showBubble(cx,cy){
+  const b=document.getElementById('name-bubble'),r=document.getElementById('map').getBoundingClientRect();
+  let l=cx-r.left+12,t=cy-r.top+12;
+  if(l+248>r.width)l=cx-r.left-255;if(t+170>r.height)t=cy-r.top-178;
+  b.style.left=l+'px';b.style.top=t+'px';b.classList.add('show');
+  document.getElementById('nb-name').value='';
+  setTimeout(()=>document.getElementById('nb-name').focus(),60);
+}
+function hideBubble(){document.getElementById('name-bubble').classList.remove('show');pendingLL=null;}
+function cancelBubble(){hideBubble();}
+function confirmBubble(){
+  const name=document.getElementById('nb-name').value.trim();
+  if(!name){toast('⚠ Name required');return;}
+  if(!pendingLL){toast('⚠ No coordinates');return;}
+  const nl={id:nextLocId++,name,type:document.getElementById('nb-type').value,region:document.getElementById('nb-region').value,lat:pendingLL.lat,lng:pendingLL.lng,note:'',mercury:0,yamaha:0,honda:0,suzuki:0,other:0,status:'pending',notes:'',targetPct:70,budgetPct:5,includeMercury:false,boats:{}};
+  locs.push(nl);addMarker(nl);renderList();updateSummary();sched(300);
+  hideBubble();cancelAddMode();
+  setTimeout(()=>map.flyTo([nl.lat,nl.lng],12,{duration:.8}),100);
+  setTimeout(()=>openPanel(nl.id),700);
+  toast(`✓ "${name}" added`);
+}
+
+/* ═══ MARKERS ═══ */
+function mColor(loc){
+  const t=loc.mercury+loc.yamaha+loc.honda+loc.suzuki+loc.other;
+  if(!t){if(loc.status==='priority')return'#22c97a';if(loc.status==='visited')return'#e8e8f0';return'#e8600a';}
+  let mx=0,col='#e8600a';BRANDS.forEach(b=>{if(loc[b.key]>mx){mx=loc[b.key];col=b.color;}});return col;
+}
+function mkIcon(loc){
+  const c=mColor(loc),l=loc.mercury+loc.yamaha+loc.honda+loc.suzuki+loc.other;
+  const lbl=l>0?l:(loc.region==='B2B'?'★':'⚓');
+  return L.divIcon({className:'',html:`<div style="width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${c};border:1.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 7px rgba(0,0,0,.55);"><span style="transform:rotate(45deg);font-family:Archivo,sans-serif;font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;">${lbl}</span></div>`,iconSize:[30,40],iconAnchor:[15,40],popupAnchor:[0,-42]});
+}
+function addMarker(loc){const m=L.marker([loc.lat,loc.lng],{icon:mkIcon(loc)}).addTo(map);m.bindPopup(popHtml(loc),{maxWidth:215});m.on('click',()=>openPanel(loc.id));leafMarkers[loc.id]=m;}
+function refreshMarker(id){const loc=locs.find(l=>l.id===id);if(!loc||!leafMarkers[id])return;leafMarkers[id].setIcon(mkIcon(loc));leafMarkers[id].setPopupContent(popHtml(loc));const ll=leafMarkers[id].getLatLng();if(ll.lat!==loc.lat||ll.lng!==loc.lng)leafMarkers[id].setLatLng([loc.lat,loc.lng]);}
+function popHtml(loc){
+  const t=loc.mercury+loc.yamaha+loc.honda+loc.suzuki+loc.other;
+  let b='';BRANDS.forEach(br=>{if(loc[br.key]>0)b+=`<span style="background:${br.color}20;color:${br.color};padding:2px 5px;border-radius:2px;font-size:9px;font-weight:700;">${br.label}: ${loc[br.key]}</span> `;});
+  const scope=locScope(loc);
+  const sc={visited:'#e8e8f0',pending:'#e8600a',priority:'#22c97a'}[loc.status];
+  return `<div style="min-width:170px;font-family:Archivo,sans-serif;"><div class="pop-name">${loc.name}</div>
+    <div style="font-size:10px;color:#585858;margin-bottom:4px;">${loc.type||''} · <span style="color:${sc}">${{visited:'⬜',pending:'🟠',priority:'✅'}[loc.status]}</span></div>
+    ${b?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px;">${b}</div>`:''}
+    ${scope>0?`<div style="font-size:10px;color:#e8600a;font-weight:700;margin-bottom:3px;">Scope: SAR ${fmt(scope)}</div>`:''}
+    <button class="pop-open" onclick="openPanel(${loc.id})">⚡ Open & Edit</button></div>`;
+}
+
+/* ═══ PANEL ═══ */
+function openPanel(id){
+  activeId=id;const loc=locs.find(l=>l.id===id);if(!loc)return;
+  document.getElementById('pname').textContent=loc.name;
+  document.getElementById('pmeta').textContent=(loc.type||'')+' · '+rLabel(loc.region);
+  document.getElementById('notes-ta').value=loc.notes||'';
+  document.querySelectorAll('.st-btn').forEach(b=>b.classList.toggle('on',b.dataset.s===loc.status));
+  buildBrandRows(loc);redrawDonut();
+  // Refresh cap state for all brands on open
+  BRANDS.forEach(b=>refreshCapState(loc,b.key));
+  document.getElementById('save-ok').textContent='';
+  document.getElementById('panel').classList.add('open');
+  document.querySelectorAll('.loc-item').forEach(el=>el.classList.toggle('active',+el.dataset.id===id));
+  map.flyTo([loc.lat,loc.lng],Math.max(map.getZoom(),10),{duration:.7});
+  renderScopePanel(loc);
+}
+function closePanel(){document.getElementById('panel').classList.remove('open');document.querySelectorAll('.loc-item').forEach(el=>el.classList.remove('active'));activeId=null;}
+
+function switchPTab(t,btn){
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  document.querySelectorAll('.panel-page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pp-'+t).classList.add('on');
+  if(t==='scope'&&activeId)renderScopePanel(locs.find(l=>l.id===activeId));
+}
+
+/* ═══ SCOPE PANEL ═══ */
+
+// Get all boat scope values for a location as a sorted array (desc)
+function locAllBoatScopes(loc){
+  const includeMerc=loc.includeMercury??false;
+  const vals=[];
+  Object.entries(loc.boats||{}).forEach(([brand,arr])=>{
+    if(brand==='mercury'&&!includeMerc)return; // skip mercury unless opted in
+    arr.forEach(b=>{const v=parseFloat(b.scope)||0;if(v>0)vals.push(v);});
+  });
+  return vals.sort((a,b)=>b-a);
+}
+
+// Total of ALL boat scopes (denominator / full potential)
+function locScope(loc){
+  return locAllBoatScopes(loc).reduce((a,b)=>a+b,0);
+}
+
+// Target = sum of top N boats, where N = floor(totalBoats × pct/100)
+// totalBoats = count of boats with scope entered; pct = loc.targetPct ?? 70
+function locTarget(loc){
+  const vals=locAllBoatScopes(loc);
+  if(!vals.length)return 0;
+  const pct=loc.targetPct??70;
+  const n=Math.max(1,Math.floor(vals.length*(pct/100)));
+  return vals.slice(0,n).reduce((a,b)=>a+b,0);
+}
+
+// Budget = target × budgetPct/100
+function locBudget(loc){
+  return locTarget(loc)*((loc.budgetPct??5)/100);
+}
+
+function locScopeBreakdown(loc){
+  const rows=[];
+  Object.entries(loc.boats||{}).forEach(([brand,arr])=>{
+    arr.forEach(b=>{if((parseFloat(b.scope)||0)>0||b.owner)rows.push({brand,boat:b});});
+  });
+  return rows;
+}
+
+function renderScopePanel(loc){
+  // Sync pct inputs to location values
+  const tPct=loc.targetPct??70;
+  const bPct=loc.budgetPct??5;
+  const includeMerc=loc.includeMercury??false;
+  const tInp=document.getElementById('pct-target');
+  const bInp=document.getElementById('pct-budget');
+  const mToggle=document.getElementById('toggle-mercury-scope');
+  if(tInp)tInp.value=tPct;
+  if(bInp)bInp.value=bPct;
+  if(mToggle){
+    mToggle.checked=includeMerc;
+    syncToggleUI(includeMerc);
+  }
+
+  const list=document.getElementById('scope-boat-list');
+  list.innerHTML='';
+  const allBoats=[];
+  BRANDS.forEach(b=>{(loc.boats[b.key]||[]).forEach(boat=>allBoats.push({brand:b,boat}));});
+
+  if(!allBoats.length){
+    list.innerHTML='<div class="no-scope">No boats registered yet.<br>Add boats via the Field Data tab to set scope.</div>';
+    document.getElementById('scope-summary-box').style.display='none';
+    return;
+  }
+
+  // Sort boats by scope desc for display (highest first)
+  allBoats.sort((a,b)=>(parseFloat(b.boat.scope)||0)-(parseFloat(a.boat.scope)||0));
+
+  // Figure out which boats are in the "target" set
+  const scopedBoats=allBoats.filter(({boat})=>(parseFloat(boat.scope)||0)>0);
+  const n=Math.max(1,Math.floor(scopedBoats.length*(tPct/100)));
+  const targetBoatIds=new Set(scopedBoats.slice(0,n).map(({boat})=>boat.id));
+
+  allBoats.forEach(({brand,boat},idx)=>{
+    const inTarget=(parseFloat(boat.scope)||0)>0&&targetBoatIds.has(boat.id);
+    const row=document.createElement('div');
+    row.className='scope-boat-row';
+    row.style.cssText=inTarget?'border-left:2px solid var(--green);padding-left:6px;':'padding-left:8px;';
+    row.innerHTML=`
+      <div style="flex:1;min-width:0;">
+        <div class="sbi-name">${boat.owner||boat.boatName||boat.boatId||'Unknown'}${inTarget?` <span style="font-size:8px;color:var(--green);font-weight:700;vertical-align:middle;">★ IN TARGET</span>`:''}</div>
+        <div style="font-size:9px;color:var(--txt3);">${boat.engine||''} ${boat.year||''}</div>
+      </div>
+      <span class="sbi-brand" style="background:${brand.color}18;color:${brand.color};">${brand.label}</span>
+      <div class="sbi-input-wrap">
+        <span class="sbi-prefix">SAR</span>
+        <input class="sbi-inp" type="number" min="0" step="500"
+          value="${boat.scope||''}"
+          placeholder="0"
+          data-lid="${loc.id}" data-brand="${brand.key}" data-bid="${boat.id}"
+          oninput="updateBoatScope(this)">
+      </div>`;
+    list.appendChild(row);
+  });
+
+  refreshScopeSummary(loc);
+  document.getElementById('scope-summary-box').style.display='block';
+}
+
+function syncToggleUI(on){
+  const track=document.getElementById('toggle-mercury-track');
+  const thumb=document.getElementById('toggle-mercury-thumb');
+  const lbl=document.getElementById('toggle-mercury-lbl');
+  if(track)track.style.background=on?'var(--orange)':'var(--b2)';
+  if(thumb)thumb.style.left=on?'19px':'3px';
+  if(lbl){lbl.textContent=on?'On':'Off';lbl.style.color=on?'var(--orange)':'var(--txt3)';}
+}
+
+function onPctChange(){
+  if(activeId===null)return;
+  const loc=locs.find(l=>l.id===activeId);if(!loc)return;
+  const tp=parseFloat(document.getElementById('pct-target')?.value)||70;
+  const bp=parseFloat(document.getElementById('pct-budget')?.value)||5;
+  const merc=document.getElementById('toggle-mercury-scope')?.checked??false;
+  loc.targetPct=Math.min(100,Math.max(1,tp));
+  loc.budgetPct=Math.min(100,Math.max(1,bp));
+  loc.includeMercury=merc;
+  syncToggleUI(merc);
+  renderScopePanel(loc);
+  updateSummary();
+  sched(800);
+}
+
+function updateBoatScope(inp){
+  const loc=locs.find(l=>l.id===+inp.dataset.lid);if(!loc)return;
+  const arr=(loc.boats[inp.dataset.brand]||[]);
+  const boat=arr.find(b=>b.id===inp.dataset.bid);
+  if(boat){boat.scope=inp.value?parseFloat(inp.value):0;}
+  renderScopePanel(loc); // re-render to recompute target stars
+  updateSummary();
+  sched(1200);
+}
+
+function refreshScopeSummary(loc){
+  const total=locScope(loc);
+  const target=locTarget(loc);
+  const budget=locBudget(loc);
+  const tPct=loc.targetPct??70;
+  const bPct=loc.budgetPct??5;
+  const allVals=locAllBoatScopes(loc);
+  const n=allVals.length>0?Math.max(1,Math.floor(allVals.length*(tPct/100))):0;
+
+  document.getElementById('sk-total').textContent=sarFmt(total);
+  document.getElementById('sk-target').textContent=sarFmt(target);
+  document.getElementById('sk-budget').textContent=sarFmt(budget);
+  const tl=document.getElementById('sk-target-lbl');
+  if(tl)tl.textContent=`Target (${tPct}%)`;
+  const bl=document.getElementById('sk-budget-lbl');
+  if(bl)bl.textContent=`Mktg Budget (${bPct}%)`;
+  const ex=document.getElementById('sk-explain');
+  if(ex&&allVals.length>0){
+    ex.innerHTML=`<strong style="color:var(--txt2);">Target</strong> = top <strong style="color:var(--green)">${n} of ${allVals.length}</strong> boats by value (${tPct}%) = ${sarFmt(target)}<br>
+    <strong style="color:var(--txt2);">Mktg Budget</strong> = ${bPct}% of target = ${sarFmt(budget)}`;
+  }else if(ex){ex.textContent='';}
+}
+
+/* ═══ SCOPE VIEW (full tab) ═══ */
+let svSortVal='scope-desc';
+function renderScopeView(){
+  svSortVal=document.getElementById('sv-sort')?.value||'scope-desc';
+
+  // Compute per-location scope using per-location pct settings
+  const items=locs.map(loc=>{
+    const scope=locScope(loc);
+    const target=locTarget(loc);
+    const budget=locBudget(loc);
+    return{loc,scope,target,budget};
+  });
+
+  // Grand totals = sum of per-location targets/budgets (respects individual % settings)
+  const grandScope=items.reduce((a,i)=>a+i.scope,0);
+  const grandTarget=items.reduce((a,i)=>a+i.target,0);
+  const grandBudget=items.reduce((a,i)=>a+i.budget,0);
+  const maxScope=Math.max(...items.map(i=>i.scope),1);
+
+  // Totals bar
+  document.getElementById('sv-totals').innerHTML=`
+    <div class="sv-kpi orange"><div class="sv-kpi-val">${sarFmt(grandScope)}</div><div class="sv-kpi-lbl">Total Full Scope</div><div class="sv-kpi-sub">All registered boat values combined</div></div>
+    <div class="sv-kpi green"><div class="sv-kpi-val">${sarFmt(grandTarget)}</div><div class="sv-kpi-lbl">Total Target</div><div class="sv-kpi-sub">Top-N boats per marina (custom %)</div></div>
+    <div class="sv-kpi blue"><div class="sv-kpi-val">${sarFmt(grandBudget)}</div><div class="sv-kpi-lbl">Total Marketing Budget</div><div class="sv-kpi-sub">% of each marina's target</div></div>
+    <div class="sv-kpi"><div class="sv-kpi-val">${items.filter(i=>i.scope>0).length}</div><div class="sv-kpi-lbl">Marinas with Scope</div><div class="sv-kpi-sub">Out of ${items.length} total</div></div>`;
+
+  // Filter buttons
+  const fv=['all','EP','WP','BH','UAE','LB','B2B','CUSTOM'];
+  const fl={all:'All',EP:'SA Eastern',WP:'SA Western',BH:'🇧🇭 Bahrain',UAE:'🇦🇪 UAE',LB:'🇱🇧 Lebanon',B2B:'🏗 B2B',CUSTOM:'📍 Custom'};
+  document.getElementById('sv-filters').innerHTML=`
+    <button class="sv-fb${svFilter==='all'?' on':''}" onclick="svSetFilter('all')">All</button>
+    <span style="font-size:9px;font-weight:700;color:var(--txt3);padding:0 4px;opacity:.6;">🇸🇦</span>
+    <button class="sv-fb${svFilter==='EP'?' on':''}" onclick="svSetFilter('EP')">Eastern</button>
+    <button class="sv-fb${svFilter==='WP'?' on':''}" onclick="svSetFilter('WP')">Western</button>
+    <span style="width:1px;height:14px;background:var(--b2);display:inline-block;margin:0 3px;vertical-align:middle;"></span>
+    <button class="sv-fb${svFilter==='BH'?' on':''}" onclick="svSetFilter('BH')">🇧🇭 Bahrain</button>
+    <button class="sv-fb${svFilter==='UAE'?' on':''}" onclick="svSetFilter('UAE')">🇦🇪 UAE</button>
+    <button class="sv-fb${svFilter==='LB'?' on':''}" onclick="svSetFilter('LB')">🇱🇧 Lebanon</button>
+    <span style="width:1px;height:14px;background:var(--b2);display:inline-block;margin:0 3px;vertical-align:middle;"></span>
+    <button class="sv-fb${svFilter==='B2B'?' on':''}" onclick="svSetFilter('B2B')">🏗 B2B</button>
+    <button class="sv-fb${svFilter==='CUSTOM'?' on':''}" onclick="svSetFilter('CUSTOM')">📍 Custom</button>`;
+
+  // Filter + sort
+  let sorted=items.filter(i=>svFilter==='all'||i.loc.region===svFilter);
+  if(svSortVal==='scope-desc')sorted.sort((a,b)=>b.scope-a.scope);
+  else if(svSortVal==='scope-asc')sorted.sort((a,b)=>a.scope-b.scope);
+  else if(svSortVal==='target-desc')sorted.sort((a,b)=>b.target-a.target);
+  else sorted.sort((a,b)=>a.loc.name.localeCompare(b.loc.name));
+
+  // Cards
+  const grid=document.getElementById('sv-grid');
+  grid.innerHTML='';
+  sorted.forEach(({loc,scope,target,budget})=>{
+    const pct=scope>0?Math.round(scope/maxScope*100):0;
+    const tPct=loc.targetPct??70;
+    const bPct=loc.budgetPct??5;
+    const regColor='var(--txt3)';
+    const allBoats=[];
+    BRANDS.forEach(b=>{(loc.boats[b.key]||[]).forEach(boat=>allBoats.push({brand:b,boat}));});
+    const scopedBoats=allBoats.filter(({boat})=>(parseFloat(boat.scope)||0)>0)
+      .sort((a,b)=>(parseFloat(b.boat.scope)||0)-(parseFloat(a.boat.scope)||0));
+    const nTarget=Math.max(1,Math.floor(scopedBoats.length*(tPct/100)));
+    const targetBoats=scopedBoats.slice(0,nTarget);
+
+    const card=document.createElement('div');
+    card.className='sv-card';
+    card.innerHTML=`
+      <div class="sv-card-hd">
+        <div>
+          <div class="sv-card-name">${loc.name}</div>
+          <div style="font-size:9px;color:var(--txt3);margin-top:2px;">${loc.type||''} &nbsp;·&nbsp; Target: <strong style="color:var(--green)">${tPct}%</strong> &nbsp;·&nbsp; Mktg: <strong style="color:var(--blue)">${bPct}%</strong></div>
+        </div>
+        <span class="sv-card-reg rt-${loc.region}" style="color:${regColor};">${rShort(loc.region)}</span>
+      </div>
+      <div class="sv-card-body">
+        <div class="sv-card-scope-lbl">Total Replacement Scope</div>
+        <div class="sv-card-scope">${scope>0?sarFmt(scope):'No scope entered'}</div>
+        ${scope>0?`
+        <div class="sv-bar-wrap"><div class="sv-bar" style="width:${pct}%"></div></div>
+        <div class="sv-metrics">
+          <div class="sv-metric highlight">
+            <div class="sv-m-val" style="color:var(--orange)">${sarFmt(scope)}</div>
+            <div class="sv-m-lbl">Full Scope<br>All ${scopedBoats.length} boats</div>
+          </div>
+          <div class="sv-metric target">
+            <div class="sv-m-val" style="color:var(--green)">${sarFmt(target)}</div>
+            <div class="sv-m-lbl">Target (${tPct}%)<br>Top ${nTarget} of ${scopedBoats.length} boats</div>
+          </div>
+          <div class="sv-metric budget">
+            <div class="sv-m-val" style="color:var(--blue)">${sarFmt(budget)}</div>
+            <div class="sv-m-lbl">Mktg Budget (${bPct}%)<br>of target</div>
+          </div>
+        </div>
+        <div class="sv-boats" style="margin-top:10px;">
+          <div style="font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-bottom:5px;">Top ${nTarget} Target Boats</div>
+          ${targetBoats.length?targetBoats.map(({brand,boat})=>`
+            <div class="sv-boat-row">
+              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${brand.color};flex-shrink:0;"></span>
+              <span class="sv-boat-name">${boat.owner||boat.boatName||boat.boatId||'Unknown'}</span>
+              <span style="font-size:9px;color:${brand.color};font-weight:700;padding:1px 5px;background:${brand.color}15;border-radius:2px;">${brand.label}</span>
+              <span class="sv-boat-scope">SAR ${fmt(parseFloat(boat.scope)||0)}</span>
+            </div>`).join(''):'<div class="sv-no-boats">No per-boat scope entered yet</div>'}
+        </div>`:'<div style="font-size:10px;color:var(--txt3);margin-top:6px;font-style:italic;">Open this location → 💰 Scope tab to enter estimates</div>'}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function svSetFilter(f){svFilter=f;renderScopeView();}
+
+/* ═══ BRAND ROWS ═══ */
+function buildBrandRows(loc){
+  const c=document.getElementById('brand-rows');c.innerHTML='';
+  BRANDS.forEach(b=>{
+    const boats=(loc.boats||{})[b.key]||[];
+    const isOpen=(openBoatSecs[loc.id]||{})[b.key]||false;
+    const w=document.createElement('div');
+    w.innerHTML=`
+      <div class="br-row">
+        <div class="br-stripe" style="background:${b.color}"></div>
+        <div class="br-lbl" style="color:${b.color}">${b.label}</div>
+        <div class="cnt">
+          <button class="cnt-btn" onclick="adj('${b.key}',-1)">−</button>
+          <input class="cnt-inp" id="ci-${b.key}" type="number" min="0" value="${loc[b.key]}" onchange="redrawDonut()">
+          <button class="cnt-btn" onclick="adj('${b.key}',1)">+</button>
+        </div>
+      </div>
+      <button class="bt-toggle${isOpen?' open-t':''}" id="btt-${b.key}" onclick="toggleSec('${b.key}')">
+        <span>🚤 ${b.label} Registry — <span id="brc-${b.key}" style="color:${b.color}">${boats.length} boat${boats.length!==1?'s':''}</span></span>
+        <span id="bta-${b.key}">${isOpen?'▲':'▼'}</span>
+      </button>
+      <div class="boats-sec${isOpen?' open':''}" id="bs-${b.key}">
+        <div class="tbl-wrap">
+          <table class="btbl">
+            <thead><tr><th>Boat ID</th><th>Engine</th><th>Owner</th><th>Contact</th><th>Scope</th><th></th></tr></thead>
+            <tbody id="bt-${b.key}"></tbody>
+          </table>
+        </div>
+        <div id="cap-msg-${b.key}" class="cap-msg"></div>
+        <button class="add-boat-btn" id="add-boat-btn-${b.key}" onclick="openAddBoat('${b.key}')">＋ Add ${b.label} Boat</button>
+      </div>`;
+    c.appendChild(w);renderBoatRows(loc,b.key);
+  });
+}
+function renderBoatRows(loc,bk){
+  const tb=document.getElementById('bt-'+bk);if(!tb)return;
+  const boats=(loc.boats||{})[bk]||[];
+  tb.innerHTML='';
+  if(!boats.length){tb.innerHTML=`<tr><td colspan="6" class="no-boats">No boats registered</td></tr>`;return;}
+  boats.forEach(b=>{
+    const scope=parseFloat(b.scope)||0;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="tc">${b.boatId||'—'}<br><span style="font-size:9px;color:var(--txt3);">${b.boatName||''}</span></td>
+      <td>${b.engine||'—'}<br><span style="font-size:9px;color:var(--txt3);">${b.year||''}</span></td>
+      <td class="tc">${b.owner||'—'}<br><span style="font-size:9px;color:var(--txt3);">${b.company||''}</span></td>
+      <td>${b.phone||''}<br><span style="font-size:9px;color:var(--txt3);">${b.email||''}</span></td>
+      <td class="scope-cell">${scope>0?sarFmt(scope):'—'}</td>
+      <td style="white-space:nowrap;"><button class="ba" onclick="openEditBoat('${bk}','${b.id}')">✏️</button><button class="ba" onclick="delBoat('${bk}','${b.id}')">🗑️</button></td>`;
+    tb.appendChild(tr);
+  });
+  refreshCapState(loc,bk);
+}
+function toggleSec(bk){
+  if(!activeId)return;if(!openBoatSecs[activeId])openBoatSecs[activeId]={};
+  const was=openBoatSecs[activeId][bk]||false;openBoatSecs[activeId][bk]=!was;
+  document.getElementById('bs-'+bk)?.classList.toggle('open',!was);
+  document.getElementById('btt-'+bk)?.classList.toggle('open-t',!was);
+  const a=document.getElementById('bta-'+bk);if(a)a.textContent=!was?'▲':'▼';
+}
+function adj(k,d){
+  const i=document.getElementById('ci-'+k);
+  if(i){
+    i.value=Math.max(0,(+i.value||0)+d);
+    redrawDonut();
+    if(activeId){const loc=locs.find(l=>l.id===activeId);if(loc){loc[k]=+i.value;refreshCapState(loc,k);}}
+  }
+}
+function setSt(s,btn){document.querySelectorAll('.st-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function savePanel(){
+  if(activeId===null)return;const loc=locs.find(l=>l.id===activeId);if(!loc)return;
+  BRANDS.forEach(b=>{const i=document.getElementById('ci-'+b.key);loc[b.key]=i?Math.max(0,+i.value||0):0;});
+  const sb=document.querySelector('.st-btn.on');loc.status=sb?sb.dataset.s:'pending';
+  loc.notes=document.getElementById('notes-ta').value;
+  refreshMarker(activeId);renderList();updateSummary();sched();
+  BRANDS.forEach(b=>refreshCapState(loc,b.key));
+  const ok=document.getElementById('save-ok');ok.textContent='✓ Saved';ok.style.opacity=1;setTimeout(()=>ok.style.opacity=0,2200);
+}
+function deleteLoc(){
+  if(activeId===null)return;const loc=locs.find(l=>l.id===activeId);
+  if(!loc||!confirm(`Delete "${loc.name}" and all data?`))return;
+  if(leafMarkers[activeId]){map.removeLayer(leafMarkers[activeId]);delete leafMarkers[activeId];}
+  locs=locs.filter(l=>l.id!==activeId);sched(300);closePanel();renderList();updateSummary();toast('🗑 Deleted');
+}
+
+/* ═══ DONUT ═══ */
+function redrawDonut(){
+  const v={};BRANDS.forEach(b=>{v[b.key]=Math.max(0,+document.getElementById('ci-'+b.key)?.value||0);});
+  const tot=Object.values(v).reduce((a,c)=>a+c,0);
+  const svg=document.getElementById('donut'),leg=document.getElementById('d-leg');
+  svg.innerHTML='';leg.innerHTML='';
+  const cx=37,cy=37,r=23,sw=9,ci=2*Math.PI*r;
+  svg.appendChild(se('circle',{cx,cy,r,fill:'none',stroke:'#383838','stroke-width':sw}));
+  if(!tot){const t=se('text',{x:cx,y:cy+3,'text-anchor':'middle',fill:'#585858','font-size':7,'font-family':'Archivo,sans-serif'});t.textContent='No data';svg.appendChild(t);}
+  else{
+    let off=0;BRANDS.forEach(b=>{if(!v[b.key])return;const p=v[b.key]/tot,d=p*ci;svg.appendChild(se('circle',{cx,cy,r,fill:'none',stroke:b.color,'stroke-width':sw,'stroke-dasharray':`${d} ${ci-d}`,'stroke-dashoffset':-off*ci+ci/4}));off+=p;});
+    const t1=se('text',{x:cx,y:cy-1,'text-anchor':'middle',fill:'#f2f2f2','font-size':13,'font-weight':800,'font-family':'Archivo,sans-serif'});t1.textContent=tot;svg.appendChild(t1);
+    const t2=se('text',{x:cx,y:cy+8,'text-anchor':'middle',fill:'#585858','font-size':6,'font-family':'Archivo,sans-serif'});t2.textContent='BOATS';svg.appendChild(t2);
+  }
+  BRANDS.forEach(b=>{const p=tot>0?Math.round(v[b.key]/tot*100):0;const row=document.createElement('div');row.className='d-row';row.innerHTML=`<div class="d-dot" style="background:${b.color}"></div><span class="d-lbl">${b.label}</span><span class="d-val" style="color:${b.color}">${v[b.key]}</span>${tot?`<span style="color:var(--txt3);font-size:9px;margin-left:2px;">${p}%</span>`:''}`;leg.appendChild(row);});
+}
+function se(tag,a){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(a).forEach(([k,v])=>el.setAttribute(k,v));return el;}
+
+/* ═══ BOAT MODAL ═══ */
+/* ── Cap state: enable/disable Add button per brand ── */
+function refreshCapState(loc, bk){
+  const btn=document.getElementById('add-boat-btn-'+bk);
+  const msg=document.getElementById('cap-msg-'+bk);
+  if(!btn||!msg)return;
+  const limit=loc[bk]||0;
+  const registered=(loc.boats[bk]||[]).length;
+  const remaining=limit-registered;
+  if(limit===0){
+    btn.disabled=true;
+    msg.textContent=`Set a ${bk} count above to enable registration`;
+    msg.className='cap-msg';
+  } else if(remaining<=0){
+    btn.disabled=true;
+    msg.textContent=`✓ All ${limit} ${bk} boat${limit!==1?'s':''} registered — increase count to add more`;
+    msg.className='cap-msg at-cap';
+  } else {
+    btn.disabled=false;
+    msg.textContent=`${registered} of ${limit} registered · ${remaining} slot${remaining!==1?'s':''} remaining`;
+    msg.className='cap-msg';
+  }
+}
+
+/* ── Duplicate ID check (fires on input) ── */
+function checkDupId(val){
+  const warn=document.getElementById('dup-warning');
+  const body=document.getElementById('dup-warning-body');
+  const okBtn=document.getElementById('bm-ok');
+  const trimmed=val.trim();
+  if(!trimmed||!editingBoat){warn.classList.remove('show');okBtn.disabled=false;return;}
+  const loc=locs.find(l=>l.id===editingBoat.locId);
+  if(!loc){warn.classList.remove('show');okBtn.disabled=false;return;}
+  // Search across ALL brands in this location
+  let found=null, foundBrand=null;
+  BRANDS.forEach(b=>{
+    (loc.boats[b.key]||[]).forEach(boat=>{
+      // Skip the boat currently being edited
+      if(editingBoat.boatId&&boat.id===editingBoat.boatId)return;
+      if(boat.boatId&&boat.boatId.trim().toLowerCase()===trimmed.toLowerCase()){
+        found=boat; foundBrand=b;
+      }
+    });
+  });
+  if(found){
+    warn.classList.add('show');
+    body.innerHTML=`Boat ID <strong style="color:var(--yellow)">${trimmed}</strong> already exists in this marina.<br>
+      <span style="color:var(--txt3);">Owner:</span> <strong>${found.owner||'—'}</strong> &nbsp;·&nbsp;
+      <span style="color:var(--txt3);">Brand:</span> <span style="color:${foundBrand.color};font-weight:700;">${foundBrand.label}</span> &nbsp;·&nbsp;
+      <span style="color:var(--txt3);">Engine:</span> ${found.engine||'—'}<br>
+      <span style="color:var(--txt3);font-style:italic;font-size:9px;">Use a different ID or edit the existing record.</span>`;
+    okBtn.disabled=true;
+  } else {
+    warn.classList.remove('show');
+    okBtn.disabled=false;
+  }
+}
+
+function openAddBoat(bk){
+  const loc=locs.find(l=>l.id===activeId);if(!loc)return;
+  // Cap check
+  const limit=loc[bk]||0;
+  const registered=(loc.boats[bk]||[]).length;
+  if(limit===0){toast(`⚠ Set a ${bk} boat count first`);return;}
+  if(registered>=limit){toast(`⚠ All ${limit} ${bk} slot${limit!==1?'s':''} filled — increase count to add more`);return;}
+  editingBoat={locId:activeId,brand:bk,boatId:null};
+  document.getElementById('bm-title').textContent=`Add ${bk[0].toUpperCase()+bk.slice(1)} Boat (${registered+1} of ${limit})`;
+  document.getElementById('bm-brand').value=bk;
+  ['bm-bid','bm-bname','bm-engine','bm-year','bm-owner','bm-phone','bm-email','bm-company','bm-scope','bm-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('bm-eid').value='';
+  document.getElementById('bm-ok').textContent='Add Boat';
+  document.getElementById('bm-ok').disabled=false;
+  document.getElementById('dup-warning').classList.remove('show');
+  document.getElementById('bm-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('bm-owner').focus(),150);
+}
+function openEditBoat(bk,bid){
+  const loc=locs.find(l=>l.id===activeId);if(!loc)return;
+  const boat=(loc.boats[bk]||[]).find(b=>b.id===bid);if(!boat)return;
+  editingBoat={locId:activeId,brand:bk,boatId:bid};
+  document.getElementById('bm-title').textContent='Edit Boat';
+  document.getElementById('bm-brand').value=boat.brand||bk;
+  document.getElementById('bm-bid').value=boat.boatId||'';
+  document.getElementById('bm-bname').value=boat.boatName||'';
+  document.getElementById('bm-engine').value=boat.engine||'';
+  document.getElementById('bm-year').value=boat.year||'';
+  document.getElementById('bm-owner').value=boat.owner||'';
+  document.getElementById('bm-phone').value=boat.phone||'';
+  document.getElementById('bm-email').value=boat.email||'';
+  document.getElementById('bm-company').value=boat.company||'';
+  document.getElementById('bm-scope').value=boat.scope||'';
+  document.getElementById('bm-notes').value=boat.notes||'';
+  document.getElementById('bm-eid').value=bid;
+  document.getElementById('bm-ok').textContent='Save Changes';
+  document.getElementById('bm-ok').disabled=false;
+  document.getElementById('dup-warning').classList.remove('show');
+  // Re-run check in case existing ID clashes with another record
+  checkDupId(boat.boatId||'');
+  document.getElementById('bm-ov').classList.add('open');
+}
+function saveBoat(){
+  // Boat ID is compulsory
+  const bidRaw=document.getElementById('bm-bid').value.trim();
+  if(!bidRaw){
+    toast('⚠ Boat ID / Hull No. is required');
+    const bidEl=document.getElementById('bm-bid');
+    bidEl.style.borderColor='rgba(248,113,113,.7)';
+    bidEl.focus();
+    return;
+  }
+  const owner=document.getElementById('bm-owner').value.trim();
+  if(!owner){toast('⚠ Owner name required');document.getElementById('bm-owner').focus();return;}
+  // Final duplicate guard (catches paste without triggering oninput)
+  const bidVal=bidRaw;
+  if(bidVal){
+    const loc0=locs.find(l=>l.id===editingBoat.locId);
+    if(loc0){
+      let dupFound=false;
+      BRANDS.forEach(b=>{
+        (loc0.boats[b.key]||[]).forEach(boat=>{
+          if(editingBoat.boatId&&boat.id===editingBoat.boatId)return;
+          if(boat.boatId&&boat.boatId.trim().toLowerCase()===bidVal.toLowerCase())dupFound=true;
+        });
+      });
+      if(dupFound){toast('⚠ Boat ID already exists in this marina');document.getElementById('bm-bid').focus();return;}
+    }
+  }
+  const loc=locs.find(l=>l.id===editingBoat.locId);if(!loc)return;
+  if(!loc.boats)loc.boats={};
+  const brand=document.getElementById('bm-brand').value;
+  if(!loc.boats[brand])loc.boats[brand]=[];
+  const data={
+    id:document.getElementById('bm-eid').value||String(nextBoatId++),brand,
+    boatId:bidVal,
+    boatName:document.getElementById('bm-bname').value.trim(),
+    engine:document.getElementById('bm-engine').value.trim(),
+    year:document.getElementById('bm-year').value.trim(),
+    owner,
+    phone:document.getElementById('bm-phone').value.trim(),
+    email:document.getElementById('bm-email').value.trim(),
+    company:document.getElementById('bm-company').value.trim(),
+    scope:parseFloat(document.getElementById('bm-scope').value)||0,
+    notes:document.getElementById('bm-notes').value.trim(),
+  };
+  const eid=document.getElementById('bm-eid').value;
+  if(eid){BRANDS.forEach(b=>{if(loc.boats[b.key])loc.boats[b.key]=loc.boats[b.key].filter(x=>x.id!==eid);});if(!loc.boats[brand])loc.boats[brand]=[];loc.boats[brand].push(data);}
+  else{loc.boats[brand].push(data);if(loc[brand]<loc.boats[brand].length)loc[brand]=loc.boats[brand].length;}
+  if(activeId===loc.id){BRANDS.forEach(b=>{const i=document.getElementById('ci-'+b.key);if(i)i.value=loc[b.key];const cnt=document.getElementById('brc-'+b.key);if(cnt){const n=(loc.boats[b.key]||[]).length;cnt.textContent=`${n} boat${n!==1?'s':''}`;}renderBoatRows(loc,b.key);refreshCapState(loc,b.key);});redrawDonut();renderScopePanel(loc);}
+  sched();refreshMarker(loc.id);renderList();updateSummary();
+  saveBoatToDb(data, loc.id);
+  closeBoatModal();toast(eid?'Boat updated ✓':'Boat added ✓');
+}
+function delBoat(bk,bid){
+  if(!confirm('Delete this boat record?'))return;
+  const loc=locs.find(l=>l.id===activeId);if(!loc||!loc.boats[bk])return;
+  loc.boats[bk]=loc.boats[bk].filter(b=>b.id!==bid);
+  deleteBoatFromDb(bid);
+  renderBoatRows(loc,bk);
+  refreshCapState(loc,bk);
+  const c=document.getElementById('brc-'+bk);if(c){const n=loc.boats[bk].length;c.textContent=`${n} boat${n!==1?'s':''}`;}
+  renderScopePanel(loc);sched();refreshMarker(activeId);updateSummary();toast('Removed');
+}
+function closeBoatModal(){
+  document.getElementById('bm-ov').classList.remove('open');
+  document.getElementById('dup-warning').classList.remove('show');
+  document.getElementById('bm-ok').disabled=false;
+  editingBoat=null;
+}
+
+/* ═══ EDIT LOC MODAL ═══ */
+function openEditLoc(){
+  if(activeId===null)return;const loc=locs.find(l=>l.id===activeId);if(!loc)return;
+  editLocId=activeId;
+  document.getElementById('el-name').value=loc.name;document.getElementById('el-type').value=loc.type||'Marina';
+  document.getElementById('el-region').value=loc.region;document.getElementById('el-lat').value=loc.lat;
+  document.getElementById('el-lng').value=loc.lng;document.getElementById('el-note').value=loc.note||'';
+  document.getElementById('el-ov').classList.add('open');
+}
+function closeEditLoc(){document.getElementById('el-ov').classList.remove('open');}
+function saveEditLoc(){
+  const name=document.getElementById('el-name').value.trim();if(!name){toast('Name required');return;}
+  const loc=locs.find(l=>l.id===editLocId);if(!loc)return;
+  loc.name=name;loc.type=document.getElementById('el-type').value;loc.region=document.getElementById('el-region').value;
+  loc.lat=parseFloat(document.getElementById('el-lat').value)||loc.lat;loc.lng=parseFloat(document.getElementById('el-lng').value)||loc.lng;loc.note=document.getElementById('el-note').value;
+  if(activeId===editLocId){document.getElementById('pname').textContent=name;document.getElementById('pmeta').textContent=loc.type+' · '+rLabel(loc.region);}
+  refreshMarker(editLocId);sched();renderList();updateSummary();closeEditLoc();toast('Updated ✓');
+}
+
+/* ═══ LIST + FILTER ═══ */
+function renderList(){
+  const list=document.getElementById('loc-list');
+  const fil=locs.filter(l=>(filter==='all'||l.region===filter)&&(!search||l.name.toLowerCase().includes(search.toLowerCase())));
+  document.getElementById('loc-count').textContent=fil.length;
+  document.getElementById('hs-locs')&&(document.getElementById('hs-locs').textContent=locs.length);
+  list.innerHTML='';
+  fil.forEach(loc=>{
+    const t=loc.mercury+loc.yamaha+loc.honda+loc.suzuki+loc.other;
+    const scope=locScope(loc);
+    let pills='';BRANDS.forEach(b=>{if(loc[b.key]>0)pills+=`<div class="bp" style="background:${b.color}18;color:${b.color};"><div class="bp-dot" style="background:${b.color}"></div>${b.label}: ${loc[b.key]}</div>`;});
+    const sd={visited:'#e8e8f0',pending:'#e8600a',priority:'#22c97a'}[loc.status];
+    const el=document.createElement('div');el.className='loc-item'+(loc.id===activeId?' active':'');el.dataset.id=loc.id;
+    el.innerHTML=`
+      <div class="li-top">
+        <div class="li-name"><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${sd};margin-right:5px;vertical-align:middle;"></span>${loc.name}</div>
+        <div class="reg-tag rt-${loc.region}">${rShort(loc.region)}</div>
+      </div>
+      <div class="li-pills">${pills||'<span style="font-size:10px;color:var(--txt3);">No boats</span>'}</div>
+      ${scope>0?`<div class="li-scope">SAR ${fmt(scope)} scope</div>`:''}`;
+    el.onclick=()=>openPanel(loc.id);list.appendChild(el);
+  });
+}
+function filterSearch(q){search=q;renderList();}
+function setFilter(f,btn){filter=f;document.querySelectorAll('.fb').forEach(b=>b.classList.toggle('on',b.dataset.f===f));renderList();}
+
+/* ═══ SUMMARY ═══ */
+function updateSummary(){
+  const t={mercury:0,yamaha:0,honda:0,suzuki:0,other:0};let reg=0,totalTarget=0;
+  locs.forEach(l=>{BRANDS.forEach(b=>t[b.key]+=l[b.key]);Object.values(l.boats||{}).forEach(a=>{reg+=a.length;});totalTarget+=locTarget(l);});
+  const grand=Object.values(t).reduce((a,b)=>a+b,0);
+  BRANDS.forEach(b=>{const el=document.getElementById('sm-'+b.key);if(el)el.textContent=t[b.key];});
+  const pct=document.getElementById('sm-pct');if(pct)pct.textContent=grand>0?`(${Math.round(t.mercury/grand*100)}%)`:'(0%)';
+  const hm=document.getElementById('hs-mercury');if(hm)hm.textContent=t.mercury;
+  const ht=document.getElementById('hs-total');if(ht)ht.textContent=grand;
+  const hc=document.getElementById('hs-comp');if(hc)hc.textContent=grand-t.mercury;
+  const hs=document.getElementById('hs-scope');if(hs)hs.textContent=totalTarget>0?sarFmt(totalTarget):'SAR 0';
+}
+
+/* ═══ HELPERS ═══ */
+function rLabel(r){return{EP:'Saudi — Eastern Province',WP:'Saudi — Western Province',BH:'Bahrain',UAE:'UAE',LB:'Lebanon',B2B:'B2B / Vision 2030',CUSTOM:'Custom'}[r]||r;}
+function rShort(r){return{EP:'SA Eastern',WP:'SA Western',BH:'Bahrain',UAE:'UAE',LB:'Lebanon',B2B:'B2B',CUSTOM:'Custom'}[r]||r;}
+function fmt(n){if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(n>=100000?0:1)+'K';return Math.round(n).toLocaleString();}
+function sarFmt(n){if(!n||n===0)return'SAR 0';return'SAR '+fmt(n);}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+
+function exportData(){
+  let csv='Location,Region,Type,Mercury,Yamaha,Honda,Suzuki,Other,Total,Status,Full Scope SAR,Target %,Target SAR,Mktg Budget %,Mktg Budget SAR,Notes\n';
+  locs.forEach(l=>{
+    const t=l.mercury+l.yamaha+l.honda+l.suzuki+l.other,sc=locScope(l),tg=locTarget(l),bd=locBudget(l);
+    const tPct=l.targetPct??70,bPct=l.budgetPct??5;
+    csv+=`"${l.name}","${rLabel(l.region)}","${l.type||''}",${l.mercury},${l.yamaha},${l.honda},${l.suzuki},${l.other},${t},"${l.status}",${sc},${tPct},${tg},${bPct},${bd},"${(l.notes||'').replace(/"/g,'""')}"\n`;
+  });
+  csv+='\nBoat Registry\nLocation,Brand,Boat ID,Boat Name,Engine,Year,Owner,Phone,Email,Company,Scope SAR,Notes\n';
+  locs.forEach(l=>{Object.entries(l.boats||{}).forEach(([brand,boats])=>{boats.forEach(b=>{csv+=`"${l.name}","${brand}","${b.boatId||''}","${b.boatName||''}","${b.engine||''}","${b.year||''}","${b.owner||''}","${b.phone||''}","${b.email||''}","${b.company||''}",${b.scope||0},"${(b.notes||'').replace(/"/g,'""')}"\n`;});});});
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='amit-field-data.csv';a.click();toast('Exported ✓');
+}
+
+function resetAll(){
+  if(!confirm('Reset ALL data? This is permanent and will clear all boats, counts, scope, and custom locations.'))return;
+  locs.forEach(l=>{l.mercury=0;l.yamaha=0;l.honda=0;l.suzuki=0;l.other=0;l.status='pending';l.notes='';l.boats={};});
+  locs=locs.filter(l=>l.id<100);
+  Object.keys(leafMarkers).forEach(id=>{if(+id>=100){map.removeLayer(leafMarkers[id]);delete leafMarkers[id];}});
+  locs.forEach(l=>refreshMarker(l.id));sched(300);closePanel();renderList();updateSummary();toast('Reset ✓');
+}
+
+document.addEventListener('keydown',e=>{
+  const bubble=document.getElementById('name-bubble');
+  if(bubble.classList.contains('show')&&e.key==='Enter'){e.preventDefault();confirmBubble();return;}
+  if(e.key==='Escape'){
+    if(document.getElementById('bm-ov').classList.contains('open'))closeBoatModal();
+    else if(document.getElementById('el-ov').classList.contains('open'))closeEditLoc();
+    else if(bubble.classList.contains('show'))cancelBubble();
+    else if(addMode)cancelAddMode();
+    else closePanel();
+  }
+});
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  await dbLoad();initMap();renderList();updateSummary();
+  document.getElementById('loading').style.display='none';
+});
+</script>
+</body>
+</html>
